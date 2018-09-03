@@ -1,0 +1,19 @@
+{
+  "name": "tomjs",
+  "version": "0.1.0",
+  "description": "tomjs framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "tom",
+    "framework",
+    "Node.js",
+    "async",
+    "await"
+  ],
+  "homepage": "https://github.com/tomgjm/tomjs",
+  "author": "tiandiwy",
+  "license": "ISC"
+}

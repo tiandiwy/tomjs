@@ -1,0 +1,8 @@
+/node_modules
+npm-debug.log
+yarn-error.log
+.env
+/.vscode
+/assets/uploads/tmp
+/.compiled
+/logs
