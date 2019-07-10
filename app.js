@@ -15,6 +15,7 @@ const auth_jwt = require2('tomjs/auth/auth_jwt');
 const auth_jwt_check = require2('tomjs/auth/auth_jwt_check');
 const auth_user = require2('tomjs/middleware/auth_user');
 const response_formatter = require2('tomjs/middleware/response-formatter');
+const render = require2('tomjs/middleware/render');
 const options = require2('tomjs/middleware/options');
 const access_control_allow = require2('tomjs/middleware/access_control_allow');
 const ErrorRoutes = require2('tomjs/route/error-routes');
@@ -38,6 +39,7 @@ async function startRun() {
     app.use(access_control_allow())
         .use(koaLogger())
         .use(KoaStatic(configs.static.path, configs.static.options)) // Static resource
+        .use(render)
         .use(response_formatter(configs.routes.response_api_formatter_path))
         .use(options());
     if (configs.auth.jwt_work_path) {
