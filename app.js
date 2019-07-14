@@ -9,7 +9,7 @@ const KoaBody = require2('koa-body');
 const KoaStatic = require2('koa-static');
 const locale = require2('koa-locale');
 const session = require2("koa-session2");
-const mount = require('koa-mount');
+const mount = require2('koa-mount');
 const Store = require2("tomjs/session/cahce_store");
 const auth_jwt = require2('tomjs/auth/auth_jwt');
 const auth_jwt_check = require2('tomjs/auth/auth_jwt_check');
@@ -25,7 +25,12 @@ if (configs.streams.boot_run_consumers) {
     require2('tomjs/handlers/run_consumer');
 }
 
-const SystemConfig = configs.system;
+//https
+const https = require('https');
+const { default: enforceHttps } = require('koa-sslify');
+const SystemConfig = require2('tomjs/handlers/server_run_type');
+
+
 async function startRun() {
     let emitter = Events.getEventEmitter('app');
     if (configs.database.await) {
@@ -36,6 +41,11 @@ async function startRun() {
 
     const app = new Koa();
     locale(app, configs.system.lang_cookie_key);
+    if (SystemConfig.server_run_type_force_https) {
+        app.use(enforceHttps({
+            port: SystemConfig.server_https_port
+        }));
+    }
     app.use(access_control_allow())
         .use(koaLogger())
         .use(KoaStatic(configs.static.path, configs.static.options)) // Static resource
@@ -78,7 +88,18 @@ async function startRun() {
 
     app.on("error", async (error, ctx) => { //捕获异常记录错误日志        
         emitter.emit('error', { ctx, error });
-    })
+    });
+
+    if (SystemConfig.server_run_type_https) {
+        let server = https.createServer(SystemConfig.ssl_options, app.callback()).listen(SystemConfig.server_https_port);
+        server.timeout = SystemConfig.server_timeout;
+    }
+
+    if (SystemConfig.server_run_type_http) {
+        let server = app.listen(SystemConfig.server_http_port, SystemConfig.server_bind_ip);
+        server.timeout = SystemConfig.server_timeout;
+    }
+
     return app;
 }
 
