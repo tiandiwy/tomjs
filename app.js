@@ -99,7 +99,7 @@ async function startRun() {
     if (SystemConfig.server_run_type_https) {
         if (SystemConfig.websocket_open) {
             let app_wss = clone(app);
-            wss = websockify(app_wss, SystemConfig.WebSocketOptions, SystemConfig.ssl_options);
+            wss = websockify(app_wss, SystemConfig.websocket_options, SystemConfig.ssl_options);
             let server = wss.listen(SystemConfig.server_https_port, SystemConfig.server_bind_ip);
             server.timeout = SystemConfig.server_timeout;
         }
@@ -112,7 +112,7 @@ async function startRun() {
     if (SystemConfig.server_run_type_http) {
         if (SystemConfig.websocket_open && (!SystemConfig.server_run_type_force_https)) {
             let app_ws = clone(app);
-            ws = websockify(app_ws, SystemConfig.WebSocketOptions);
+            ws = websockify(app_ws, SystemConfig.websocket_options);
             let server = ws.listen(SystemConfig.server_http_port, SystemConfig.server_bind_ip);
             server.timeout = SystemConfig.server_timeout;
         }
