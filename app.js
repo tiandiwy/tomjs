@@ -5,6 +5,7 @@ const path = require2('path');
 const database = require2('tomjs/database'); //根据配置连接数据库
 const koaLogger = require2('koa-logger');
 const Koa = require2('koa');
+const websockify = require2('koa-websocket');
 const KoaBody = require2('koa-body');
 const KoaStatic = require2('koa-static');
 const locale = require2('koa-locale');
@@ -20,6 +21,7 @@ const options = require2('tomjs/middleware/options');
 const access_control_allow = require2('tomjs/middleware/access_control_allow');
 const ErrorRoutes = require2('tomjs/route/error-routes');
 const setupLang = require2('tomjs/middleware/setuplang');
+const { clone } = require2('tomjs/handlers/base_tools');
 const Events = require2('tomjs/handlers/events');
 if (configs.streams.boot_run_consumers) {
     require2('tomjs/handlers/run_consumer');
@@ -30,7 +32,6 @@ const https = require('https');
 const { default: enforceHttps } = require('koa-sslify');
 const SystemConfig = require2('tomjs/handlers/server_run_type');
 
-
 async function startRun() {
     let emitter = Events.getEventEmitter('app');
     if (configs.database.await) {
@@ -40,7 +41,9 @@ async function startRun() {
     }
 
     const app = new Koa();
+
     locale(app, configs.system.lang_cookie_key);
+
     if (SystemConfig.server_run_type_force_https) {
         app.use(enforceHttps({
             port: SystemConfig.server_https_port
@@ -90,14 +93,38 @@ async function startRun() {
         emitter.emit('error', { ctx, error });
     });
 
+    let ws = undefined;
+    let wss = undefined;
+
     if (SystemConfig.server_run_type_https) {
-        let server = https.createServer(SystemConfig.ssl_options, app.callback()).listen(SystemConfig.server_https_port);
-        server.timeout = SystemConfig.server_timeout;
+        if (SystemConfig.websocket_open) {
+            let app_wss = clone(app);
+            wss = websockify(app_wss, SystemConfig.WebSocketOptions, SystemConfig.ssl_options);
+            let server = wss.listen(SystemConfig.server_https_port, SystemConfig.server_bind_ip);
+            server.timeout = SystemConfig.server_timeout;
+        }
+        else {
+            let server = https.createServer(SystemConfig.ssl_options, app.callback()).listen(SystemConfig.server_https_port, SystemConfig.server_bind_ip);
+            server.timeout = SystemConfig.server_timeout;
+        }
     }
 
     if (SystemConfig.server_run_type_http) {
-        let server = app.listen(SystemConfig.server_http_port, SystemConfig.server_bind_ip);
-        server.timeout = SystemConfig.server_timeout;
+        if (SystemConfig.websocket_open && (!SystemConfig.server_run_type_force_https)) {
+            let app_ws = clone(app);
+            ws = websockify(app_ws, SystemConfig.WebSocketOptions);
+            let server = ws.listen(SystemConfig.server_http_port, SystemConfig.server_bind_ip);
+            server.timeout = SystemConfig.server_timeout;
+        }
+        else {
+            let server = app.listen(SystemConfig.server_http_port, SystemConfig.server_bind_ip);
+            server.timeout = SystemConfig.server_timeout;
+        }
+    }
+
+    if (SystemConfig.websocket_open) {
+        let run_websocket = require(path.join(app_dir, 'websocket'));
+        await run_websocket(ws, wss);
     }
 
     return app;

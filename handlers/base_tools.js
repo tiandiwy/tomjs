@@ -18,3 +18,10 @@ exports.isFunction = function (func) {
 exports.isString = function (func) {
     return typeof(func) == "string";
 }
+
+exports.clone = function (obj) {
+    return Object.create(
+        Object.getPrototypeOf(obj),
+        Object.getOwnPropertyDescriptors(obj)
+    )
+}
