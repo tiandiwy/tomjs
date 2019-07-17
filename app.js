@@ -40,7 +40,7 @@ async function startRun() {
         database.build();
     }
 
-    const app = new Koa();
+    let app = new Koa();
 
     locale(app, configs.system.lang_cookie_key);
 
@@ -51,7 +51,7 @@ async function startRun() {
     }
     app.use(access_control_allow())
         .use(koaLogger())
-        .use(KoaStatic(configs.static.path, configs.static.options)) // Static resource
+        .use(mount(configs.static.target_path, KoaStatic(configs.static.source_path, configs.static.options))) // Static resource
         .use(render)
         .use(response_formatter(configs.routes.response_api_formatter_path))
         .use(options());
