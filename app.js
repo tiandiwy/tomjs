@@ -95,31 +95,31 @@ async function startRun() {
 
     let ws = undefined;
     let wss = undefined;
+    let server_http = undefined;
+    let server_https = undefined;
 
     if (SystemConfig.server_run_type_https) {
         if (SystemConfig.websocket_open) {
             let app_wss = clone(app);
             wss = websockify(app_wss, SystemConfig.websocket_options, SystemConfig.ssl_options);
-            let server = wss.listen(SystemConfig.server_https_port, SystemConfig.server_bind_ip);
-            server.timeout = SystemConfig.server_timeout;
+            server_https = wss.listen(SystemConfig.server_https_port, SystemConfig.server_bind_ip);
         }
         else {
-            let server = https.createServer(SystemConfig.ssl_options, app.callback()).listen(SystemConfig.server_https_port, SystemConfig.server_bind_ip);
-            server.timeout = SystemConfig.server_timeout;
+            server_https = https.createServer(SystemConfig.ssl_options, app.callback()).listen(SystemConfig.server_https_port, SystemConfig.server_bind_ip);
         }
+        server_https.timeout = SystemConfig.server_timeout;
     }
 
     if (SystemConfig.server_run_type_http) {
         if (SystemConfig.websocket_open && (!SystemConfig.server_run_type_force_https)) {
             let app_ws = clone(app);
             ws = websockify(app_ws, SystemConfig.websocket_options);
-            let server = ws.listen(SystemConfig.server_http_port, SystemConfig.server_bind_ip);
-            server.timeout = SystemConfig.server_timeout;
+            server_http = ws.listen(SystemConfig.server_http_port, SystemConfig.server_bind_ip);
         }
         else {
-            let server = app.listen(SystemConfig.server_http_port, SystemConfig.server_bind_ip);
-            server.timeout = SystemConfig.server_timeout;
+            server_http = app.listen(SystemConfig.server_http_port, SystemConfig.server_bind_ip);
         }
+        server_http.timeout = SystemConfig.server_timeout;
     }
 
     if (SystemConfig.websocket_open) {
@@ -127,7 +127,7 @@ async function startRun() {
         await run_websocket(ws, wss);
     }
 
-    return app;
+    return { app, server_http, server_https };
 }
 
 module.exports = startRun;
