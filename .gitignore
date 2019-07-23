@@ -6,3 +6,4 @@ yarn-error.log
 /assets/uploads/tmp
 /.compiled
 /logs
+package-lock.json
