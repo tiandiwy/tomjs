@@ -61,7 +61,7 @@ module.exports = async function(config) {
             }
         }
 
-        if (url.length > 0) {
+        if (url.length <= 0) {
             let sHead = '';
             if (username.length > 0) {
                 if (password.length > 0) {
