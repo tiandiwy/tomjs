@@ -6,6 +6,7 @@ const BaseApiError = require2('tomjs/error/base_api_error');
 const KoaRouter = require2('koa-router');
 const { isObject, isArray, ObjtoArray, } = require2('tomjs/handlers/tools');
 const ratelimit = require2('tomjs/middleware/ratelimit');
+const auth_cfg = require2('tomjs/configs')().auth;
 
 async function router_func(controller_obj, func_name, rules, ctx) {
     //合并params与query参数
@@ -66,9 +67,9 @@ class LaravelRoutes extends KoaRouter {
         this.get('/auth/info', controller_dir+'/login@getAuthInfo');
         this.get('/auth/captcha/:field_name', controller_dir+'/captcha@index');
         this.get('/auth/captcha/email/:field_name/:email/', controller_dir+'/captcha@email');
-        this.use('/auth/captcha/mobile', ratelimit('mobile')); //访问限制中间件
+        if(auth_cfg.auth_routes_use_ratelimit){this.use('/auth/captcha/mobile', ratelimit('mobile'));}//访问限制中间件
         this.any('/auth/captcha/mobile/:field_name/:phoneNumber/', controller_dir+'/captcha@mobile');
-        this.use('/auth/login', ratelimit('login')); //访问限制中间件
+        if(auth_cfg.auth_routes_use_ratelimit){this.use('/auth/login', ratelimit('login'));}//访问限制中间件
         this.post('/auth/login', controller_dir+'/login@login');
         this.get('/auth/retoken/:long/', controller_dir+'/login@retoken');
         this.any('/auth/logout', controller_dir+'/login@logout');
