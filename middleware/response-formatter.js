@@ -73,6 +73,8 @@ let url_filter = (pattern) => {
                         data: {},
                     };
                     NeedThrow = false;
+                } else if (error.name == "TooManyRequestsError") {                   
+                    NeedThrow = true;
                 } else if (SystemConfig.all_error_web_show) {
                     emitter.emit('error', { error, ctx });
                     ctx.status = 200;
