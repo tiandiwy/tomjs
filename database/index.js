@@ -24,7 +24,7 @@ class DataBase {
             }
         }
 
-        let idx = '' + type + ',' + (typeof(config) == 'object' ? JSON.stringify(config):config);
+        let idx = '' + db_type + ',' + (typeof(config) == 'object' ? JSON.stringify(config):config);
         if (database_arr[idx]) { return database_arr[idx]; }
 
         let require_file = db_type;
