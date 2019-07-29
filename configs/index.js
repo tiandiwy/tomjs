@@ -1,5 +1,5 @@
 const require2 = require('tomjs/handlers/require2');
-let all_configs = [];
+let all_configs = {};
 let def_config = undefined;
 
 module.exports = function(dir) {

@@ -2,7 +2,7 @@ const require2 = require('tomjs/handlers/require2');
 const config = require2('tomjs/configs')().cache;
 const Cacheman = require2('cacheman')
 let default_cache = new Cacheman('default', config);
-let all_caches = [];
+let all_caches = {};
 
 function cache(name, options) {
     if (name === undefined) {
