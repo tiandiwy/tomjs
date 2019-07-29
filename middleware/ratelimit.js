@@ -2,12 +2,17 @@ const require2 = require('tomjs/handlers/require2');
 const ratelimit_cfg = require2('tomjs/configs')().ratelimit;
 const BaseApiError = require2('tomjs/error/base_api_error');
 const buildRedis = require2('tomjs/handlers/build_redis');
+const ipchecker = require('ipchecker');
 const ratelimit = require2('koa-ratelimit');
 const b_ratelimit = require2('tomjs-koa-better-ratelimit');
 const { isArray, isFunction, clone } = require2('tomjs/handlers/base_tools');
 const getTime = require2('tomjs/handlers/gettimes');
 
+let allRatelimit = {};
+
 module.exports = function (ratelimit_name = 'default') {
+    if (allRatelimit[ratelimit_name]) { return allRatelimit[ratelimit_name]; }
+
     let isRedis = true;
 
     let opts = clone(ratelimit_cfg[ratelimit_name].options);
@@ -25,6 +30,9 @@ module.exports = function (ratelimit_name = 'default') {
     if (opts.duration) {
         opts.duration = getTime(opts.duration, 60000, true);
     }
+    if (opts.clear_interval) {
+        opts.clear_interval = getTime(opts.clear_interval, 60000, true);
+    }
     let blacklist = [];
     let blacklist_if_fn = false;
     if (isArray(ratelimit_cfg[ratelimit_name].blacklist)) {
@@ -35,6 +43,7 @@ module.exports = function (ratelimit_name = 'default') {
         blacklist = ratelimit_cfg[ratelimit_name].blacklist;
         blacklist_if_fn = true;
     }
+
     let whitelist = [];
     let whitelist_if_fn = false;
     if (isArray(ratelimit_cfg[ratelimit_name].whitelist)) {
@@ -46,15 +55,25 @@ module.exports = function (ratelimit_name = 'default') {
         whitelist_if_fn = true
     }
 
+    let blackCheck = undefined;
+    if (!blacklist_if_fn) {
+        blackCheck = ipchecker.create(blacklist);
+    }
+
+    let whiteCheck = undefined;
+    if (!whitelist_if_fn) {
+        whiteCheck = ipchecker.create(whitelist);
+    }
+
     let fn_ratelimit = undefined;
     if (isRedis) { fn_ratelimit = ratelimit(opts); }
     else { fn_ratelimit = b_ratelimit(opts); }
-    return async function (ctx, next) {
+    allRatelimit[ratelimit_name] = async function (ctx, next) {
         let isBlack = false;
         if (blacklist_if_fn) {
-            isBlack = await blacklist(ctx, ctx.ip);
-        } else {
-            isBlack = blacklist.indexOf(ctx.ip) >= 0;
+            isBlack = await blacklist(ctx.ip, ctx);
+        } else if (blackCheck) {
+            isBlack = blackCheck(ctx.ip);
         }
         if (isBlack) {
             if (ratelimit_cfg[ratelimit_name].options.show_api_error) {
@@ -68,9 +87,9 @@ module.exports = function (ratelimit_name = 'default') {
 
         let isWhite = false;
         if (whitelist_if_fn) {
-            isWhite = await whitelist(ctx, ctx.ip);
-        } else {
-            isWhite = whitelist.indexOf(ctx.ip) >= 0;
+            isWhite = await whitelist(ctx.ip, ctx);
+        } else if (whiteCheck) {
+            isWhite = whiteCheck(ctx.ip);
         }
         if (isWhite) {
             await next();
@@ -81,4 +100,5 @@ module.exports = function (ratelimit_name = 'default') {
             }
         }
     };
+    return allRatelimit[ratelimit_name];
 }
