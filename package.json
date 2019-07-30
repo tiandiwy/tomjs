@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {
@@ -19,6 +19,7 @@
   "devDependencies": {},
   "dependencies": {
     "@alicloud/sms-sdk": "^1.1.6",
+    "async-ratelimiter": "^1.2.7",
     "cacheman": "^2.2.1",
     "cacheman-mongo": "^1.0.4",
     "cacheman-redis": "^2.0.0",
@@ -63,7 +64,7 @@
     "sequelize": "^5.10.2",
     "svg-captcha": "^1.3.12",
     "swig-templates": "^2.0.3",
-    "tomjs-koa-better-ratelimit": "^2.1.4",
+    "tomjs-koa-better-ratelimit": "^2.1.5",
     "universal-dotenv": "^1.9.3",
     "validatorjs_tom": "^0.1.0",
     "vamtiger-regex-html-title": "0.0.5",

@@ -67,9 +67,9 @@ class LaravelRoutes extends KoaRouter {
         this.get('/auth/info', controller_dir+'/login@getAuthInfo');
         this.get('/auth/captcha/:field_name', controller_dir+'/captcha@index');
         this.get('/auth/captcha/email/:field_name/:email/', controller_dir+'/captcha@email');
-        if(auth_cfg.auth_routes_use_ratelimit){this.use('/auth/captcha/mobile', ratelimit('mobile'));}//访问限制中间件
+        if(auth_cfg.auth_routes_use_ratelimit){this.use('/auth/captcha/mobile', ratelimit('mobile').web);}//访问限制中间件
         this.any('/auth/captcha/mobile/:field_name/:phoneNumber/', controller_dir+'/captcha@mobile');
-        if(auth_cfg.auth_routes_use_ratelimit){this.use('/auth/login', ratelimit('login'));}//访问限制中间件
+        if(auth_cfg.auth_routes_use_ratelimit){this.use('/auth/login', ratelimit('login').web);}//访问限制中间件
         this.post('/auth/login', controller_dir+'/login@login');
         this.get('/auth/retoken/:long/', controller_dir+'/login@retoken');
         this.any('/auth/logout', controller_dir+'/login@logout');

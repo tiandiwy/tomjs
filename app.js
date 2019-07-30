@@ -23,6 +23,7 @@ const ErrorRoutes = require2('tomjs/route/error-routes');
 const setupLang = require2('tomjs/middleware/setuplang');
 const { clone } = require2('tomjs/handlers/base_tools');
 const Events = require2('tomjs/handlers/events');
+const websocket_response_formatter = require2('tomjs/middleware/websocket_response_formatter');
 if (configs.streams.boot_run_consumers) {
     require2('tomjs/handlers/run_consumer');
 }
@@ -124,6 +125,8 @@ async function startRun() {
 
     if (SystemConfig.websocket_open) {
         let run_websocket = require(path.join(app_dir, 'websocket'));
+        if (ws) {ws.ws.use(websocket_response_formatter);}
+        if (wss) {wss.ws.use(websocket_response_formatter);}
         await run_websocket(ws, wss);
     }
 
