@@ -25,6 +25,27 @@ let opt = {
     tokenKey: auth_cfg.jwt_tokenKey,
     cookie: auth_cfg.jwt_cookie,
     passthrough: auth_cfg.jwt_auth_all_path,
+    getToken: (ctx) => {
+        if (isObject(ctx.websocket)) {
+            if (ctx.query && ctx.query.Authorization) {
+                const parts = ctx.query.Authorization.split(' ');
+                if (parts.length === 2) {
+                    const scheme = parts[0];
+                    const credentials = parts[1];
+
+                    if (/^Bearer$/i.test(scheme)) {
+                        return credentials;
+                    }
+                }
+            }
+
+            ctx.ws_error_send(new error('Bad Authorization query format. Format is "[url]?Authorization=Bearer <token>"'));
+            ctx.websocket.terminate();
+        }
+        else {
+            return false;
+        }
+    },
     isRevoked: async(ctx, decodedToken, token) => {
 
         //写入token相关信息
@@ -75,8 +96,15 @@ if (typeof(auth_cfg.jwt_audience) == "string" || isArray(auth_cfg.jwt_audience))
 if (typeof(auth_cfg.jwt_issuer) == "string" || isArray(auth_cfg.jwt_issuer)) {
     opt['issuer'] = auth_cfg.jwt_issuer;
 }
-if (auth_cfg.jwt_auth_all_path) {
-    module.exports = koa_jwt(opt);
-} else {
-    module.exports = koa_jwt(opt).unless(auth_unless);
-}
+
+module.exports = (isWS = false)=>{
+    if(!isWS){
+        if (auth_cfg.jwt_auth_all_path) {
+            return koa_jwt(opt);
+        } else {
+            return koa_jwt(opt).unless(auth_unless);
+        }
+    } else {
+        return koa_jwt(opt);
+    }
+};

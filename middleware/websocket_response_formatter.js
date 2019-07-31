@@ -29,10 +29,5 @@ module.exports = async function (ctx, next) {
         ctx.websocket.send.apply(ctx.websocket, arguments);
     };
 
-    try {
-        return await next();
-    }
-    catch (error) {
-        ctx.ws_error_send(error);
-    }
+    return next();
 };

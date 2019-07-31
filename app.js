@@ -12,7 +12,7 @@ const locale = require2('koa-locale');
 const session = require2("koa-session2");
 const mount = require2('koa-mount');
 const Store = require2("tomjs/session/cahce_store");
-const auth_jwt = require2('tomjs/auth/auth_jwt');
+const build_auth_jwt = require2('tomjs/auth/auth_jwt');
 const auth_jwt_check = require2('tomjs/auth/auth_jwt_check');
 const auth_user = require2('tomjs/middleware/auth_user');
 const response_formatter = require2('tomjs/middleware/response-formatter');
@@ -27,6 +27,8 @@ const websocket_response_formatter = require2('tomjs/middleware/websocket_respon
 if (configs.streams.boot_run_consumers) {
     require2('tomjs/handlers/run_consumer');
 }
+
+const auth_jwt = build_auth_jwt(false);
 
 //https
 const https = require('https');
@@ -124,7 +126,7 @@ async function startRun() {
     }
 
     if (SystemConfig.websocket_open) {
-        let run_websocket = require(path.join(app_dir, 'websocket'));
+        let run_websocket = require2('tomjs/websocket');
         if (ws) {ws.ws.use(websocket_response_formatter);}
         if (wss) {wss.ws.use(websocket_response_formatter);}
         await run_websocket(ws, wss);
