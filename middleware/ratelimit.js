@@ -1,7 +1,6 @@
 const require2 = require('tomjs/handlers/require2');
 const ratelimit_cfg = require2('tomjs/configs')().ratelimit;
 const BaseApiError = require2('tomjs/error/base_api_error');
-const RatelimitError = require2('tomjs/error/ratelimit_error');
 const buildRedis = require2('tomjs/handlers/build_redis');
 const ipchecker = require('ipchecker');
 const ratelimit = require2('koa-ratelimit');
@@ -116,7 +115,7 @@ module.exports = function (ratelimit_name = 'default') {
             isBlack = blackCheck(ctx.ip);
         }
         if (isBlack) {
-            throw new RatelimitError(ratelimit_cfg[ratelimit_name].blackMessage, ctx.ip);
+            throw new BaseApiError(BaseApiError.TOO_MANY_REQUESTS_ERROR, ratelimit_cfg[ratelimit_name].blackMessage, ctx.ip);
         }
 
         let isWhite = false;
@@ -136,7 +135,7 @@ module.exports = function (ratelimit_name = 'default') {
                 end = await fn_ratelimit(ctx, () => { return true; });
             }
             if (end !== true) {
-                throw new RatelimitError(opts.errorMessage, end);
+                throw new BaseApiError(BaseApiError.TOO_MANY_REQUESTS_ERROR, opts.errorMessage, end);
             }
 
         }

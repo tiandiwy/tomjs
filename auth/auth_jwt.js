@@ -9,6 +9,7 @@ const auth_unless = require2('tomjs/configs')().auth_unless;
 const build_token = require2('tomjs/handlers/build_token');
 const getTime = require2('tomjs/handlers/gettimes');
 const log4js = require2('tomjs/handlers/log4js');
+const BaseApiError = require2('tomjs/error/base_api_error');
 let authLog = console;
 if (typeof(auth_cfg.log4js_category) && (auth_cfg.log4js_category.length > 0)) {
     authLog = log4js.getLogger(auth_cfg.log4js_category);
@@ -39,7 +40,7 @@ let opt = {
                 }
             }
 
-            ctx.ws_error_send(new error('Bad Authorization query format. Format is "[url]?Authorization=Bearer <token>"'));
+            ctx.ws_error_send(new BaseApiError(BaseApiError.UNAUTHORIZED, 'Bad Authorization query format. Format is "[url]?Authorization=Bearer <token>"',ctx.query));
             ctx.websocket.terminate();
         }
         else {

@@ -23,7 +23,7 @@ async function initWS(ws, isWSS) {
                     await ratelimit('websocket_global').websocket(ctx);
                 }
                 if (isFunction(ctx.websocket.on_message)) {
-                    await ctx.websocket.on_message(message);
+                    await ctx.websocket.on_message(JSON.parse(message));
                 }
             }
             catch (error) {

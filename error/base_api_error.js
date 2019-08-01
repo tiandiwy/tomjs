@@ -3,7 +3,7 @@ const path = require2('path');
 const AppDir = require2('tomjs/handlers/dir');
 const system_cfg = require2('tomjs/configs')().system;
 
-function isObject(obj){//因为需要tools文件会用到本类所以不能调用tools文件下的isObject函数
+function isObject(obj) {//因为需要tools文件会用到本类所以不能调用tools文件下的isObject函数
     return (obj instanceof Object) && (!Array.isArray(obj));
 }
 //使用 class语法 将无法正常通过instanceof关键字判断类的类型
@@ -12,10 +12,10 @@ function isObject(obj){//因为需要tools文件会用到本类所以不能调�
  */
 function BaseApiError(error_code, error_msg, data) {
 
-    BaseApiError.prototype.Translate = function(lang) {
+    BaseApiError.prototype.Translate = function (lang) {
         let loadOK = false;
         let _lang = undefined;
-        if(lang === undefined){lang = system_cfg.Lang.trim();}
+        if (lang === undefined) { lang = system_cfg.Lang.trim(); }
         try {
             _lang = require(path.join(AppDir(), './language/error/') + lang);
             loadOK = true;
@@ -27,7 +27,7 @@ function BaseApiError(error_code, error_msg, data) {
         } else { return this.message; }
     }
 
-    BaseApiError.prototype.getMessage = function(code) {
+    BaseApiError.prototype.getMessage = function (code) {
         let message = '';
         switch (code) {
             case BaseApiError.OK:
@@ -38,9 +38,12 @@ function BaseApiError(error_code, error_msg, data) {
                 break;
             case BaseApiError.AUTHORIZE_ERROR:
                 message = 'AUTHORIZE_ERROR';
-                break;                
+                break;
             case BaseApiError.LANGUAGE_ERROR:
                 message = 'LANGUAGE_ERROR';
+                break;
+            case BaseApiError.UNAUTHORIZED:
+                message = 'UNAUTHORIZED';
                 break;
             case BaseApiError.NOT_FOUND_ERROR:
                 message = 'NOT_FOUND_ERROR';
@@ -108,7 +111,7 @@ function BaseApiError(error_code, error_msg, data) {
     this.data = data;
     this.name = "BaseApiError";
     //this.stack = (new Error()).stack;
-    if (typeof(error_msg) == "string") {
+    if (typeof (error_msg) == "string") {
         this.needTranslate = false;
         this.message = error_msg;
     } else {
@@ -121,10 +124,10 @@ BaseApiError.prototype = Object.create(Error.prototype);
 BaseApiError.prototype.constructor = BaseApiError;
 
 //静态方法
-BaseApiError.Translate = function(lang, message) {
+BaseApiError.Translate = function (lang, message) {
     let loadOK = false;
     let _lang = undefined;
-    if(lang === undefined){lang = system_cfg.Lang.trim();}
+    if (lang === undefined) { lang = system_cfg.Lang.trim(); }
     try {
         _lang = require(path.join(AppDir(), './language/error/') + lang);
         loadOK = true;
@@ -141,6 +144,7 @@ BaseApiError.OK = 0;
 BaseApiError.AUTHORIZE_ERROR = 100;
 BaseApiError.VALIDATOR_ERROR = 101;
 BaseApiError.LANGUAGE_ERROR = 201;
+BaseApiError.UNAUTHORIZED = 401;
 BaseApiError.NOT_FOUND_ERROR = 404;
 BaseApiError.DEEP_POPULATE_MODEL_FILE_NOT_FOUND_ERROR = 410;
 BaseApiError.TOO_MANY_REQUESTS_ERROR = 429;

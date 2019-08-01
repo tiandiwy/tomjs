@@ -93,7 +93,6 @@ let url_filter = (pattern) => {
                     };
                 }
                 else {
-                    let emitter = Events.getEventEmitter('error');
                     emitter.emit('all_error', { error, ctx });
                 }
                 //继续抛，让外层中间件处理日志
