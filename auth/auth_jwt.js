@@ -106,6 +106,7 @@ module.exports = (isWS = false)=>{
             return koa_jwt(opt).unless(auth_unless);
         }
     } else {
+        opt.passthrough = true;
         return koa_jwt(opt);
     }
 };
