@@ -22,13 +22,15 @@ const access_control_allow = require2('tomjs/middleware/access_control_allow');
 const ErrorRoutes = require2('tomjs/route/error-routes');
 const setupLang = require2('tomjs/middleware/setuplang');
 const { clone } = require2('tomjs/handlers/base_tools');
+
+const app_init = require(path.join(app_dir, './init/web'));//提供用户第一时间初始化app使用
+
 const Events = require2('tomjs/handlers/events');
-const websocket_response_formatter = require2('tomjs/middleware/websocket_response_formatter');
 if (configs.streams.boot_run_consumers) {
     require2('tomjs/handlers/run_consumer');
 }
 
-const auth_jwt = build_auth_jwt(false);
+const auth_jwt = build_auth_jwt('web');
 
 //https
 const https = require('https');
@@ -43,8 +45,7 @@ async function startRun() {
         database.build();
     }
 
-    let app = new Koa();
-
+    let app = await app_init(new Koa());
     locale(app, configs.system.lang_cookie_key);
 
     if (SystemConfig.server_run_type_force_https) {
@@ -61,12 +62,12 @@ async function startRun() {
     if (configs.auth.jwt_work_path) {
         app.use(mount(configs.auth.jwt_work_path, auth_jwt));
         if (configs.auth.jwt_auth_all_path) {
-            app.use(mount(configs.auth.jwt_work_path, auth_jwt_check));
+            app.use(mount(configs.auth.jwt_work_path, auth_jwt_check('web')));
         }
     } else {
         app.use(auth_jwt);
         if (configs.auth.jwt_auth_all_path) {
-            app.use(auth_jwt_check);
+            app.use(auth_jwt_check('web'));
         }
     }
     app.use(auth_user)
@@ -127,8 +128,6 @@ async function startRun() {
 
     if (SystemConfig.websocket_open) {
         let run_websocket = require2('tomjs/websocket');
-        if (ws) {ws.ws.use(websocket_response_formatter);}
-        if (wss) {wss.ws.use(websocket_response_formatter);}
         await run_websocket(ws, wss);
     }
 

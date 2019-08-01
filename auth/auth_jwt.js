@@ -39,7 +39,6 @@ let opt = {
                     }
                 }
             }
-
             ctx.ws_error_send(new BaseApiError(BaseApiError.UNAUTHORIZED, 'Bad Authorization query format. Format is "[url]?Authorization=Bearer <token>"',ctx.query));
             ctx.websocket.terminate();
         }
@@ -98,15 +97,10 @@ if (typeof(auth_cfg.jwt_issuer) == "string" || isArray(auth_cfg.jwt_issuer)) {
     opt['issuer'] = auth_cfg.jwt_issuer;
 }
 
-module.exports = (isWS = false)=>{
-    if(!isWS){
-        if (auth_cfg.jwt_auth_all_path) {
-            return koa_jwt(opt);
-        } else {
-            return koa_jwt(opt).unless(auth_unless);
-        }
-    } else {
-        opt.passthrough = true;
+module.exports = (type = 'web')=>{
+    if (auth_cfg.jwt_auth_all_path) {
         return koa_jwt(opt);
+    } else {
+        return koa_jwt(opt).unless(auth_unless[type]);
     }
 };

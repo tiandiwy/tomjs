@@ -53,6 +53,12 @@ module.exports = async function (ctx, next) {
             NeedThrow = false;
         }
         else {
+            if (error.code) {
+                err_obj.data.code = error.code;
+            }
+            if (error.data) {
+                err_obj.data.data = error.data;
+            }
             if (error.name) {
                 err_obj.data.name = error.name;
             }

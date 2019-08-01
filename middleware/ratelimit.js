@@ -6,7 +6,7 @@ const ipchecker = require('ipchecker');
 const ratelimit = require2('koa-ratelimit');
 const b_ratelimit = require2('tomjs-koa-better-ratelimit');
 const async_ratelimiter = require2('async-ratelimiter');
-const { isArray, isFunction, clone } = require2('tomjs/handlers/base_tools');
+const { isArray, isFunction, clone, isObject } = require2('tomjs/handlers/base_tools');
 const getTime = require2('tomjs/handlers/gettimes');
 
 let allRatelimit = {};
@@ -135,6 +135,7 @@ module.exports = function (ratelimit_name = 'default') {
                 end = await fn_ratelimit(ctx, () => { return true; });
             }
             if (end !== true) {
+                if (isObject(end)) { end.limit = 0; }
                 throw new BaseApiError(BaseApiError.TOO_MANY_REQUESTS_ERROR, opts.errorMessage, end);
             }
 
