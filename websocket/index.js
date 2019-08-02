@@ -5,16 +5,21 @@ const build_auth_jwt = require2('tomjs/auth/auth_jwt');
 const auth_jwt = build_auth_jwt('websocket');
 const auth_jwt_check = require2('tomjs/auth/auth_jwt_check');
 const auth_user = require2('tomjs/middleware/auth_user');
+const setupLang = require2('tomjs/middleware/setuplang');
+const session = require2("tomjs-koa-session2");
+const Store = require2("tomjs/session/cahce_store");
 const appdir = require2('tomjs/handlers/dir')();
 const configs = require2('tomjs/configs')();
 const ratelimit = require2('tomjs/middleware/ratelimit');//访问限制器
 const { isFunction, isObject } = require2('tomjs/handlers/base_tools');
 const websocket_response_formatter = require2('tomjs/middleware/websocket_response_formatter');
+const websocket_lang = require2('tomjs/middleware/websocket_lang');
 const ws_init = require(path.join(app_dir, './init/websocket'));//提供用户第一时间初始化ws使用
 const initWebSocket = require(path.join(appdir, './websocket'));
 
 async function initWS(ws, isWSS) {
     ws = await ws_init(ws, isWSS);
+    ws.use(websocket_lang);
     ws.use(websocket_response_formatter);
     ws.use(async (ctx, next) => {
         ctx.throw = async function (code, message, data) {
@@ -28,6 +33,8 @@ async function initWS(ws, isWSS) {
         ws.use(auth_jwt_check('websocket'));
     }
     ws.use(auth_user);
+    ws.use(session({ key: configs.session.session_key, store: new Store() }));
+    ws.use(setupLang);
     ws.use(async (ctx, next) => {
         ctx.websocket.on('message', async (message) => {
             try {

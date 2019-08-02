@@ -1,5 +1,5 @@
 const require2 = require('tomjs/handlers/require2');
-const { Store } = require2("koa-session2");
+const { Store } = require2("tomjs-koa-session2");
 const session_cfg = require2('tomjs/configs')().session;
 const auth_config = require2('tomjs/configs')().auth;
 const Cacheman = require2('cacheman');
