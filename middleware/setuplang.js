@@ -50,7 +50,7 @@ module.exports = async function (ctx, next) {
     }
     ctx.__ = ctx.state.__;
 
-    ctx.setlanguage = function (lang) {
+    ctx.setlanguage = async function (lang) {
         if (isObject(ctx.state[configs.auth.jwt_key])) { //用户已经登陆 此时有有效的session
             if (lang) { //如果cookie有设置语言类型
                 if (lang != ctx.session[configs.session.language_key]) { //如果发现cookie语言类型和session不一致就 准备修改session和用户数据记录
