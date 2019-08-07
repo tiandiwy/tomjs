@@ -44,7 +44,7 @@
     "koa-views-render": "0.0.1",
     "koa-websocket": "^6.0.0",
     "lodash": "^4.17.15",
-    "log4js": "^3.0.6",
+    "log4js": "^4.5.1",
     "mongoose": "^5.6.6",
     "mongoose-delete": "^0.4.0",
     "mongoose-hidden": "^1.6.2",
