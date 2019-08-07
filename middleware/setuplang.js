@@ -5,7 +5,7 @@ const __2 = require2('tomjs/handlers/__');
 const UserModel = require(configs.auth.auth_model);
 //提供标准的获取当前语言的全局方法
 
-module.exports = async function(ctx, next) {
+module.exports = async function (ctx, next) {
     let lang = ctx.getLocaleFromQuery(); //优先url参数    
     if (!lang) {
         lang = ctx.getLocaleFromCookie(); //否则就是Cookie设置
@@ -31,7 +31,7 @@ module.exports = async function(ctx, next) {
     if (!lang) {
         lang = ctx.getLocaleFromHeader(false); //否则看浏览器头部设置
     }
-    if (typeof(lang) == "string") {
+    if (typeof (lang) == "string") {
         if (configs.system.languages.trim()
             .split(',')
             .indexOf(lang) < 0) {
@@ -45,9 +45,31 @@ module.exports = async function(ctx, next) {
     ctx.lang = lang;
 
     //给ctx添加__翻译函数
-    ctx.state.__ = function(text, lang) {
+    ctx.state.__ = function (text, lang) {
         return __2(text, (lang === undefined ? this.lang : lang));
     }
     ctx.__ = ctx.state.__;
+
+    ctx.setlanguage = function (lang) {
+        if (isObject(ctx.state[configs.auth.jwt_key])) { //用户已经登陆 此时有有效的session
+            if (lang) { //如果cookie有设置语言类型
+                if (lang != ctx.session[configs.session.language_key]) { //如果发现cookie语言类型和session不一致就 准备修改session和用户数据记录
+                    if (configs.system.languages.trim().split(',').indexOf(lang) >= 0) { //检测cookie的语言类型是否在范围内
+                        ctx.session[configs.session.language_key] = lang;
+                        let users = UserModel.Model();
+                        if (users.schema.obj.language) {
+                            await users.updateOne({ _id: ctx.auth.id() }, { language: lang });
+                        }
+                    } else {
+                        lang = undefined;
+                    }
+                }
+            }            
+        }
+        else {
+            ctx.session[configs.session.language_key] = lang;
+        }
+        return lang;
+    }
     return next();
 };
