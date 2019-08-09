@@ -1,5 +1,7 @@
 const require2 = require('tomjs/handlers/require2');
 const BaseApiError = require2('tomjs/error/base_api_error');
+const { isObject } = require2('tomjs/handlers/base_tools');
+const subdomain_cfg = require2('tomjs/configs')().subdomain;
 const SystemConfig = require2('tomjs/configs')().system;
 const Events = require2('tomjs/handlers/events');
 
@@ -28,10 +30,23 @@ let response_formatter = (ctx) => {
     }
 }
 
-let url_filter = (pattern) => {
+let url_filter = () => {
+    let path_pattern = undefined;
+    let hostname_pattern = undefined;
+    if (isObject(subdomain_cfg.response_api_formatter)) {
+        path_pattern = subdomain_cfg.response_api_formatter.path;
+        hostname_pattern = subdomain_cfg.response_api_formatter.hostname;
+    }
     return async (ctx, next) => {
-        let reg = new RegExp(pattern);
-        let isAPI = reg.test(ctx.originalUrl);
+        let isAPI = false;
+        if (hostname_pattern) {
+            let reg = new RegExp(hostname_pattern);
+            isAPI = reg.test(ctx.hostname);
+        }
+        if (isAPI && path_pattern) {
+            let reg = new RegExp(path_pattern);
+            isAPI = reg.test(ctx.originalUrl);
+        }
         try {
             //先去执行路由
             await next();
@@ -73,7 +88,7 @@ let url_filter = (pattern) => {
                         data: {},
                     };
                     NeedThrow = false;
-                } else if (error.name == "TooManyRequestsError") {                   
+                } else if (error.name == "TooManyRequestsError") {
                     NeedThrow = true;
                 } else if (SystemConfig.all_error_web_show) {
                     emitter.emit('error', { error, ctx });

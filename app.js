@@ -8,6 +8,7 @@ const Koa = require2('koa');
 const websockify = require2('koa-websocket');
 const KoaBody = require2('koa-body');
 const KoaStatic = require2('koa-static');
+const Subdomain = require2('koa-subdomain');
 const locale = require2('koa-locale');
 const session = require2("tomjs-koa-session2");
 const mount = require2('koa-mount');
@@ -57,7 +58,7 @@ async function startRun() {
         .use(koaLogger())
         .use(mount(configs.static.target_path, KoaStatic(configs.static.source_path, configs.static.options))) // Static resource
         .use(render)
-        .use(response_formatter(configs.routes.response_api_formatter_path))
+        .use(response_formatter())
         .use(options());
     if (configs.auth.jwt_work_path) {
         app.use(mount(configs.auth.jwt_work_path, auth_jwt));
@@ -75,11 +76,13 @@ async function startRun() {
         .use(setupLang)
         .use(KoaBody(configs.body)); // Processing request
     // .use(PluginLoader(SystemConfig.System_plugin_path))
-    for (let idx in configs.routes.maps) {
-        let route = require(path.join(app_dir, configs.routes.maps[idx]));
-        route.prefix(idx);
-        app.use(route.routes()).use(route.allowedMethods());
+    const subdomain = new Subdomain();
+    app.subdomainOffset = configs.subdomain.subdomain_offset;
+    for (let idx in configs.subdomain.maps) {
+        let route = require(path.join(app_dir, configs.subdomain.maps[idx]));
+        subdomain.use(idx, route.routes());
     }
+    app.use(subdomain.routes());
     app.use(ErrorRoutes());
 
     if (SystemConfig.NODE_ENV === 'development') { // logger

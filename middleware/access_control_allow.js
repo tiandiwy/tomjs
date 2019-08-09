@@ -7,7 +7,7 @@ let access_control_allow = () => {
         if (typeof (ctx.request.header.host.split) != "function") {
             throw new BaseApiError(BaseApiError.AUTHORIZE_ERROR);
         }
-        if (ctx.request.header.host.split(':')[0] === 'localhost' || ctx.request.header.host.split(':')[0] === '127.0.0.1') {
+        if (ctx.request.header.host.split(':')[0] === 'localhost' || ctx.request.header.host.split(':')[0] === '127.0.0.1' || process.env.NODE_ENV === 'development') {
             ctx.set('Access-Control-Allow-Origin', '*')
         } else {
             ctx.set('Access-Control-Allow-Origin', SystemConfig.http_server_host)
