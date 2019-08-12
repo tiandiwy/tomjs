@@ -10,10 +10,9 @@ const session = require2("tomjs-koa-session2");
 const Store = require2("tomjs/session/cahce_store");
 const appdir = require2('tomjs/handlers/dir')();
 const configs = require2('tomjs/configs')();
-const ratelimit = require2('tomjs/middleware/ratelimit');//访问限制器
-const { isFunction, isObject } = require2('tomjs/handlers/base_tools');
 const websocket_response_formatter = require2('tomjs/middleware/websocket_response_formatter');
 const websocket_lang = require2('tomjs/middleware/websocket_lang');
+const websocket_onmessage = require2('tomjs/middleware/websocket_onmessage');
 const ws_init = require(path.join(app_dir, './init/websocket'));//提供用户第一时间初始化ws使用
 const initWebSocket = require(path.join(appdir, './websocket'));
 
@@ -35,29 +34,7 @@ async function initWS(ws, isWSS) {
     ws.use(auth_user);
     ws.use(session({ key: configs.session.session_key, store: new Store() }));
     ws.use(setupLang);
-    ws.use(async (ctx, next) => {
-        ctx.websocket.on('message', async (message) => {
-            try {
-                if (isObject(configs.ratelimit.websocket_global)) {
-                    await ratelimit('websocket_global').websocket(ctx);
-                }
-                if (isFunction(ctx.websocket.on_message)) {
-                    await ctx.websocket.on_message(JSON.parse(message));
-                }
-            }
-            catch (error) {
-                let no_auto_error_send = undefined;
-                if (isFunction(ctx.websocket.on_error)) {
-                    no_auto_error_send = await ctx.websocket.on_error(error);
-                }
-                if ((no_auto_error_send !== false) && configs.system.websocket_auto_error_send) {
-                    ctx.ws_error_send(error);
-                }
-                else { ctx.websocket.emit('error', error); }
-            }
-        });
-        return next();
-    });
+    ws.use(websocket_onmessage);
     await initWebSocket(ws, isWSS);
 }
 
