@@ -22,7 +22,7 @@ const options = require2('tomjs/middleware/options');
 const access_control_allow = require2('tomjs/middleware/access_control_allow');
 const ErrorRoutes = require2('tomjs/route/error-routes');
 const setupLang = require2('tomjs/middleware/setuplang');
-const { clone } = require2('tomjs/handlers/base_tools');
+const { clone, isObject } = require2('tomjs/handlers/base_tools');
 
 const app_init = require(path.join(app_dir, './init/web'));//提供用户第一时间初始化app使用
 
@@ -55,9 +55,18 @@ async function startRun() {
         }));
     }
     app.use(access_control_allow())
-        .use(koaLogger())
-        .use(mount(configs.static.target_path, KoaStatic(configs.static.source_path, configs.static.options))) // Static resource
-        .use(render)
+        .use(koaLogger());
+    //.use(mount(configs.static.target_path, KoaStatic(configs.static.source_path, configs.static.options))) // Static resource
+    const subdomain_static = new Subdomain();
+    app.subdomainOffset = configs.subdomain.subdomain_offset;
+    for (let idx in configs.subdomain.maps) {
+        if (isObject(configs.subdomain.maps[idx].static)) {
+            let static = configs.subdomain.maps[idx].static;
+            subdomain_static.use(idx, mount(static.target_path, KoaStatic(static.source_path, static.options)));
+        }
+    }
+    app.use(subdomain_static.routes());
+    app.use(render)
         .use(response_formatter())
         .use(options());
     if (configs.auth.jwt_work_path) {
@@ -77,9 +86,8 @@ async function startRun() {
         .use(KoaBody(configs.body)); // Processing request
     // .use(PluginLoader(SystemConfig.System_plugin_path))
     const subdomain = new Subdomain();
-    app.subdomainOffset = configs.subdomain.subdomain_offset;
     for (let idx in configs.subdomain.maps) {
-        let route = require(path.join(app_dir, configs.subdomain.maps[idx]));
+        let route = require(path.join(app_dir, configs.subdomain.maps[idx].route));        
         subdomain.use(idx, route.routes());
     }
     app.use(subdomain.routes());
