@@ -1,6 +1,7 @@
 const require2 = require('tomjs/handlers/require2');//可以开始使用require2引入模块了
 const app_dir = require2('tomjs/handlers/dir')();
 const path = require2('path');
+const Subdomain = require2('koa-subdomain');
 const build_auth_jwt = require2('tomjs/auth/auth_jwt');
 const auth_jwt = build_auth_jwt('websocket');
 const auth_jwt_check = require2('tomjs/auth/auth_jwt_check');
@@ -35,6 +36,14 @@ async function initWS(ws, isWSS) {
     ws.use(session({ key: configs.session.session_key, store: new Store() }));
     ws.use(setupLang);
     ws.use(websocket_onmessage);
+    const subdomain = new Subdomain();
+    for (let idx in configs.subdomain.maps) {
+        if (configs.subdomain.maps[idx].websocket) {
+            let route = require(path.join(app_dir, 'websocket', configs.subdomain.maps[idx].websocket));
+            subdomain.use(idx, route.routes());
+        }
+    }
+    ws.use(subdomain.routes());
     await initWebSocket(ws, isWSS);
 }
 
