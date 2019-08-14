@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.1.33",
+  "version": "0.1.34",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {
@@ -39,6 +39,7 @@
     "koa-mount": "^4.0.0",
     "koa-ratelimit": "^4.2.0",
     "koa-router": "^7.4.0",
+    "koa-sslify": "^4.0.3",
     "koa-static": "^5.0.0",
     "koa-subdomain": "^3.0.0",
     "koa-views": "^6.2.0",
