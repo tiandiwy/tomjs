@@ -39,7 +39,7 @@ async function initWS(ws, isWSS) {
     const subdomain = new Subdomain();
     for (let idx in configs.subdomain.maps) {
         if (configs.subdomain.maps[idx].websocket) {
-            let route = require(path.join(app_dir, 'websocket', configs.subdomain.maps[idx].websocket));
+            let route = require(path.join(app_dir, configs.subdomain.maps[idx].websocket));
             subdomain.use(idx, route.routes());
         }
     }
