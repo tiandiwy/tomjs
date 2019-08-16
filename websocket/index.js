@@ -15,10 +15,11 @@ const websocket_response_formatter = require2('tomjs/middleware/websocket_respon
 const websocket_lang = require2('tomjs/middleware/websocket_lang');
 const websocket_onmessage = require2('tomjs/middleware/websocket_onmessage');
 const ws_init = require(path.join(app_dir, './init/websocket'));//提供用户第一时间初始化ws使用
-const initWebSocket = require(path.join(appdir, './websocket'));
+const ws_end_init = require(path.join(appdir, './websocket'));
 
-async function initWS(ws, isWSS) {
-    ws = await ws_init(ws, isWSS);
+async function initWS(server_ws, isWSS) {
+    server_ws = await ws_init(server_ws, isWSS);
+    let ws = server_ws.ws;
     ws.use(websocket_lang);
     ws.use(websocket_response_formatter);
     ws.use(async (ctx, next) => {
@@ -44,14 +45,14 @@ async function initWS(ws, isWSS) {
         }
     }
     ws.use(subdomain.routes());
-    await initWebSocket(ws, isWSS);
+    await ws_end_init(server_ws, isWSS);
 }
 
-module.exports = async function (app_ws, app_wss) {
-    if (app_ws) {
-        await initWS(app_ws.ws, false);
+module.exports = async function (server_ws, server_wss) {
+    if (server_ws) {
+        await initWS(server_ws, false);
     }
-    if (app_wss) {
-        await initWS(app_wss.ws, true);
+    if (server_wss) {
+        await initWS(server_wss, true);
     }
 }
