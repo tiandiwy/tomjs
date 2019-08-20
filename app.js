@@ -20,7 +20,7 @@ const response_formatter = require2('tomjs/middleware/response-formatter');
 const render = require2('tomjs/middleware/render');
 const options = require2('tomjs/middleware/options');
 const access_control_allow = require2('tomjs/middleware/access_control_allow');
-const ErrorRoutes = require2('tomjs/route/error-routes');
+const ErrorRouter = require2('tomjs/router/error-router');
 const setupLang = require2('tomjs/middleware/setuplang');
 const { clone, isObject } = require2('tomjs/handlers/base_tools');
 
@@ -87,11 +87,13 @@ async function startRun() {
     // .use(PluginLoader(SystemConfig.System_plugin_path))
     const subdomain = new Subdomain();
     for (let idx in configs.subdomain.maps) {
-        let route = require(path.join(app_dir, configs.subdomain.maps[idx].route));        
-        subdomain.use(idx, route.routes());
+        if (configs.subdomain.maps[idx].web) {
+            let route = require(path.join(app_dir, configs.subdomain.maps[idx].web));
+            subdomain.use(idx, route.routes());
+        }
     }
     app.use(subdomain.routes());
-    app.use(ErrorRoutes());
+    app.use(ErrorRouter());
 
     if (SystemConfig.NODE_ENV === 'development') { // logger
         app.use((ctx, next) => {

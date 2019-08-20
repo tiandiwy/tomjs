@@ -3,19 +3,20 @@ const BaseApiError = require2('tomjs/error/base_api_error');
 const system_cfg = require2('tomjs/configs')().system;
 const Events = require2('tomjs/handlers/events');
 
-let emitter = Events.getEventEmitter('websokcterror');
+let emitter = Events.getEventEmitter('websocket');
 
 module.exports = async function (ctx, next) {
-    ctx.ws_send = function (data) {
+    ctx.websocket.old_send = ctx.websocket.send;
+    ctx.websocket.send = async function (data) {
         arguments[0] = JSON.stringify({
             code: 0,
             message: 'success',
             data: data
         });
-        ctx.websocket.send.apply(ctx.websocket, arguments);
+        return await ctx.websocket.old_send.apply(ctx.websocket, arguments);
     };
 
-    ctx.ws_error_send = function (error) {
+    ctx.websocket.error_send = async function (error) {
         let err_obj = {
             code: -1,
             message: error.message,
@@ -31,7 +32,7 @@ module.exports = async function (ctx, next) {
             else {
                 isOK = true;
             }
-        } else if (error.status == 401) {
+        } else if (error.status == 401 || error.code == 401) {
             err_obj.code = 401;
             err_obj.message = error.originalError ? error.originalError.message : error.message,
                 err_obj.data = error.data || {};
@@ -77,11 +78,11 @@ module.exports = async function (ctx, next) {
             };
         }
         else {
-            emitter.emit('all_error', { error, ctx });
+            emitter.emit('error_send', { error, ctx });
         }
 
         arguments[0] = JSON.stringify(err_obj);
-        ctx.websocket.send.apply(ctx.websocket, arguments);
+        return await ctx.websocket.old_send.apply(ctx.websocket, arguments);
     };
 
     return next();

@@ -24,7 +24,7 @@ async function initWS(server_ws, isWSS) {
     ws.use(websocket_response_formatter);
     ws.use(async (ctx, next) => {
         ctx.throw = async function (code, message, data) {
-            await ctx.ws_error_send({ code, message, data });
+            await ctx.websocket.error_send({ code, message, data });
             ctx.websocket.terminate();
         }
         return next();
@@ -36,7 +36,6 @@ async function initWS(server_ws, isWSS) {
     ws.use(auth_user);
     ws.use(session({ key: configs.session.session_key, store: new Store() }));
     ws.use(setupLang);
-    ws.use(websocket_onmessage);
     const subdomain = new Subdomain();
     for (let idx in configs.subdomain.maps) {
         if (configs.subdomain.maps[idx].websocket) {
@@ -44,7 +43,9 @@ async function initWS(server_ws, isWSS) {
             subdomain.use(idx, route.routes());
         }
     }
+    ws.use(websocket_onmessage);
     ws.use(subdomain.routes());
+
     await ws_end_init(server_ws, isWSS);
 }
 

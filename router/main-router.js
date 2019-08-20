@@ -50,7 +50,7 @@ async function router_func(controller_obj, func_name, rules, ctx) {
 
 let Object_Arr = {};
 
-class LaravelRoutes extends KoaRouter {
+class LaravelRouter extends KoaRouter {
 
     getObject(path, controllerClass, func_name) {
         if (Object_Arr[path] === undefined) {
@@ -326,4 +326,4 @@ class LaravelRoutes extends KoaRouter {
         return this.buildRouter('del', router_str, controller_str, info);
     }
 }
-module.exports = LaravelRoutes;
+module.exports = LaravelRouter;

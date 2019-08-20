@@ -39,7 +39,7 @@ let opt = {
                     }
                 }
             }
-            ctx.ws_error_send(new BaseApiError(BaseApiError.UNAUTHORIZED, 'Bad Authorization query format. Format is "[url]?Authorization=Bearer <token>"',ctx.query));
+            ctx.websocket.error_send(new BaseApiError(BaseApiError.UNAUTHORIZED, 'Bad Authorization query format. Format is "[url]?Authorization=Bearer <token>"',ctx.query));
             ctx.websocket.terminate();
         }
         else {
