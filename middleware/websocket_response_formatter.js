@@ -7,16 +7,20 @@ let emitter = Events.getEventEmitter('websocket');
 
 module.exports = async function (ctx, next) {
     ctx.websocket.old_send = ctx.websocket.send;
-    ctx.websocket.send = async function (data) {
-        arguments[0] = JSON.stringify({
+    ctx.websocket.send = function (data) {
+        let new_data = {
             code: 0,
             message: 'success',
             data: data
-        });
-        return await ctx.websocket.old_send.apply(ctx.websocket, arguments);
+        }
+        if (data.id) {
+            new_data.id = data.id;
+        }
+        arguments[0] = JSON.stringify(new_data);
+        return ctx.websocket.old_send.apply(ctx.websocket, arguments);
     };
 
-    ctx.websocket.error_send = async function (error) {
+    ctx.websocket.error_send = function (error) {
         let err_obj = {
             code: -1,
             message: error.message,
@@ -81,8 +85,11 @@ module.exports = async function (ctx, next) {
             emitter.emit('error_send', { error, ctx });
         }
 
+        if (err_obj.data.id) {
+            err_obj.id = err_obj.data.id;
+        }
         arguments[0] = JSON.stringify(err_obj);
-        return await ctx.websocket.old_send.apply(ctx.websocket, arguments);
+        return ctx.websocket.old_send.apply(ctx.websocket, arguments);
     };
 
     return next();

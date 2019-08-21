@@ -9,22 +9,10 @@ const { isObject, isArray, isString, isFunction } = require2('tomjs/handlers/too
 const ratelimit = require2('tomjs/middleware/ratelimit');
 const subdomain_cfg = require2('tomjs/configs')().subdomain;
 
-class WebsocketRouter extends KoaRouter {
-
-    // authRoutes(controller_dir = 'auth') {
-    //     this.get('/auth/info', controller_dir + '/login@getAuthInfo');
-    //     this.get('/auth/captcha/:field_name', controller_dir + '/captcha@index');
-    //     this.get('/auth/captcha/email/:field_name/:email/', controller_dir + '/captcha@email');
-    //     if (auth_cfg.auth_routes_use_ratelimit) { this.use('/auth/captcha/mobile', ratelimit('mobile').web); }//访问限制中间件
-    //     this.any('/auth/captcha/mobile/:field_name/:phoneNumber/', controller_dir + '/captcha@mobile');
-    //     if (auth_cfg.auth_routes_use_ratelimit) { this.use('/auth/login', ratelimit('login').web); }//访问限制中间件
-    //     this.post('/auth/login', controller_dir + '/login@login');
-    //     this.get('/auth/retoken/:long/', controller_dir + '/login@retoken');
-    //     this.any('/auth/logout', controller_dir + '/login@logout');
-    //     this.post('/auth/register', controller_dir + '/register@register');
-    //     this.post('/auth/resetpassword', controller_dir + '/password@resetpassword');
-    //     this.post('/auth/forgotpassword', controller_dir + '/password@forgotpassword');
-    // }
+class WebsocketRouter {
+    constructor() {
+        this.router = new KoaRouter();
+    }
 
     cloneCTX(ctx, data) {
         let new_ctx = Object.assign({}, ctx);
@@ -57,7 +45,7 @@ class WebsocketRouter extends KoaRouter {
         return new_ctx;
     }
 
-    ws_router(path_str, controller) {
+    path(path_str, controller) {
         let old_controller = controller;
         let controller_fn = () => { };
 
@@ -68,20 +56,20 @@ class WebsocketRouter extends KoaRouter {
 
                 //新 send 函数 默认添加method、path两个参数
                 let old_send = new_ctx.websocket.send;
-                new_ctx.websocket.send = async function (data) {
-                    if (!isObject(data)) {
-                        data = { data: data };
+                new_ctx.websocket.send = function (sned_data) {
+                    if (!isObject(sned_data)) {
+                        sned_data = { data: sned_data };
                     }
-                    arguments[0] = Object.assign({ method: data.method, path: data.path }, data);
-                    return await old_send.apply(ctx.websocket, arguments);
+                    arguments[0] = Object.assign({ id: data.id, method: data.method, path: data.path }, sned_data);
+                    return old_send.apply(ctx.websocket, arguments);
                 };
 
                 //新 error_send 函数 默认添加method、path两个参数
                 let old_error_send = new_ctx.websocket.error_send;
-                new_ctx.websocket.error_send = async function (error) {
-                    error.data = Object.assign({ method: data.method, path: data.path }, error.data);
+                new_ctx.websocket.error_send = function (error) {
+                    error.data = Object.assign({ id: data.id, method: data.method, path: data.path }, error.data);
                     arguments[0] = error;
-                    return await old_error_send.apply(ctx.websocket, arguments);
+                    return old_error_send.apply(ctx.websocket, arguments);
                 };
 
                 let new_next = async () => {
@@ -119,8 +107,19 @@ class WebsocketRouter extends KoaRouter {
             throw new WSRouterRrror(`ws_router param:${old_controller}, error: Not a function or Object`);
         }
 
-        return this.all(path_str, controller);
+        return this.router.all(path_str, controller);
     }
 
+    routes() {
+        return this.router.routes.apply(this.router, arguments);
+    }
+
+    use() {
+        return this.router.use.apply(this.router, arguments);
+    }
+
+    prefix() {
+        return this.router.prefix.apply(this.router, arguments);
+    }
 }
 module.exports = WebsocketRouter;
