@@ -102,6 +102,7 @@ class WS_URL_Router {
                             method = data.method;
                             path = data.path;
                         }
+                        if (send_data === undefined) { send_data = {}; }
                         let data_obj = { code: 0, message: 'success', method, path, data: send_data };
                         if (id) { data_obj.id = id; }
                         arguments[0] = JSON.stringify(data_obj);
@@ -129,6 +130,7 @@ class WS_URL_Router {
 
                     let isRunNewNext = false;
                     new_ctx.websocket.reply = function (send_data) {
+                        if (send_data === undefined) { send_data = {}; }
                         isRunNewNext = true;
                         if (data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
                             arguments[0] = JSON.stringify({
@@ -160,7 +162,7 @@ class WS_URL_Router {
                                     throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, data);
                                 }
                             }
-                            else if (new_ctx.status == 200 && new_ctx.body !== undefined && data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
+                            else if (new_ctx.status == 200 && data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
                                 new_ctx.websocket.reply(new_ctx.body);
                             }
                         }
