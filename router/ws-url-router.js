@@ -176,7 +176,7 @@ class WS_URL_Router {
         };
 
         if (isString(controller)) {
-            controller = require(path.join(appdir, subdomain_cfg.socket_router_path, controller));
+            controller = require(path.join(appdir, subdomain_cfg.websocket_socket_routes_path, controller));
         }
         if (isObject(controller)) {
             if (isFunction(controller.routes)) {
