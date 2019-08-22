@@ -1,11 +1,9 @@
 const require2 = require('tomjs/handlers/require2');
 const path = require2('path');
 const appdir = require2('tomjs/handlers/dir')();
-const Validator = require(path.join(appdir, './validator/validator.js'));//通过调用用户定义的validator，方便用户添加自定义验证码规则
 const BaseApiError = require2('tomjs/error/base_api_error');
 const WSRouterRrror = require2('tomjs/error/ws_router_error');
 const WSTimeOutRrror = require2('tomjs/error/ws_timeout_error');
-const WSTimeOutReceiveRrror = require2('tomjs/error/ws_timeout_receive_error');
 const KoaRouter = require2('koa-router');
 const { isObject, isArray, isString, isFunction } = require2('tomjs/handlers/tools');
 const subdomain_cfg = require2('tomjs/configs')().subdomain;
@@ -75,19 +73,12 @@ class WS_URL_Router {
                     if (AsyncObj[data.id]) {
                         var resolve_reject = AsyncObj[data.id];
                         delete AsyncObj[data.id];
-
-                        if (resolve_reject.timeout_handle !== null) {
-                            if (resolve_reject.timeout_handle) { clearTimeout(resolve_reject.timeout_handle); }
-                            if (data.code == 0) {
-                                resolve_reject.resolve(data.data);
-                            }
-                            else {
-                                resolve_reject.reject(data);
-                            }
+                        if (resolve_reject.timeout_handle) { clearTimeout(resolve_reject.timeout_handle); }
+                        if (data.code == 0) {
+                            resolve_reject.resolve(data.data);
                         }
                         else {
-                            //如果 resolve_reject.timeout_handle === null 表示已经超时
-                            throw new WSTimeOutReceiveRrror('websocket time out receive', data);
+                            resolve_reject.reject(data);
                         }
                     }
                     else {
@@ -119,7 +110,7 @@ class WS_URL_Router {
                             let time_out = timeout || parseInt(system_cfg.websocket_send_time_out);
                             if (time_out > 0) {
                                 let timeout_fn = function () {
-                                    if (AsyncObj[id]) { AsyncObj[id].timeout_handle = null; }
+                                    if (AsyncObj[id]) { delete AsyncObj[id] }
                                     reject(new WSTimeOutRrror('websocket time out:' + time_out, { id, method, path, data: send_data }));
                                 }
                                 timeout_handle = setTimeout(timeout_fn, time_out);
