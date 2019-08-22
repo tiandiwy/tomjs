@@ -4,10 +4,15 @@ const appdir = require2('tomjs/handlers/dir')();
 const Validator = require(path.join(appdir, './validator/validator.js'));//通过调用用户定义的validator，方便用户添加自定义验证码规则
 const BaseApiError = require2('tomjs/error/base_api_error');
 const WSRouterRrror = require2('tomjs/error/ws_router_error');
+const WSTimeOutRrror = require2('tomjs/error/ws_timeout_error');
+const WSTimeOutReceiveRrror = require2('tomjs/error/ws_timeout_receive_error');
 const KoaRouter = require2('koa-router');
 const { isObject, isArray, isString, isFunction } = require2('tomjs/handlers/tools');
-const ratelimit = require2('tomjs/middleware/ratelimit');
 const subdomain_cfg = require2('tomjs/configs')().subdomain;
+const system_cfg = require2('tomjs/configs')().system;
+const Events = require2('tomjs/handlers/events');
+
+let emitter = Events.getEventEmitter('websocket');
 
 class WebsocketRouter {
     constructor() {
@@ -23,6 +28,8 @@ class WebsocketRouter {
         new_ctx.ip = ctx.ip;
         new_ctx.ips = ctx.ips;
         new_ctx._body = undefined;
+        new_ctx.header = Object.assign({}, ctx.header, { data });
+        new_ctx.headers = Object.assign({}, ctx.headers, { data });
         if (data.method) {
             new_ctx.method = data.method;
         }
@@ -50,43 +57,121 @@ class WebsocketRouter {
         let controller_fn = () => { };
 
         let ws_route_fn = async (ctx, next) => {
+            let iSendID = 0;
+            function getNewSendID() {
+                iSendID++;
+                return system_cfg.websocket_id_head + iSendID;
+            }
+            let AsyncObj = {};
+            let old_send = ctx.websocket.old_send;
+
             ctx.websocket.on_message = async (data) => {
-                data.method = data.method.trim().toUpperCase();
+                if (isString(data.method)) {
+                    data.method = data.method.trim().toUpperCase();
+                }
                 let new_ctx = this.cloneCTX(ctx, data);
 
-                //新 send 函数 默认添加method、path两个参数
-                let old_send = new_ctx.websocket.send;
-                new_ctx.websocket.send = function (sned_data) {
-                    if (!isObject(sned_data)) {
-                        sned_data = { data: sned_data };
-                    }
-                    arguments[0] = Object.assign({ id: data.id, method: data.method, path: data.path }, sned_data);
-                    return old_send.apply(ctx.websocket, arguments);
-                };
+                if (isObject(data) && data.id && data.id.startsWith(system_cfg.websocket_id_head)) {
+                    if (AsyncObj[data.id]) {
+                        var resolve_reject = AsyncObj[data.id];
+                        delete AsyncObj[data.id];
 
-                //新 error_send 函数 默认添加method、path两个参数
-                let old_error_send = new_ctx.websocket.error_send;
-                new_ctx.websocket.error_send = function (error) {
-                    error.data = Object.assign({ id: data.id, method: data.method, path: data.path }, error.data);
-                    arguments[0] = error;
-                    return old_error_send.apply(ctx.websocket, arguments);
-                };
-
-                let new_next = async () => {
-                    if (new_ctx.status === 0) {
-                        if ((new_ctx.matched === undefined)
-                            || (isArray(new_ctx.matched) && new_ctx.matched.length <= 0)
-                        ) {
-                            new_ctx.status = 404;
-                            throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, data);
+                        if (resolve_reject.timeout_handle !== null) {
+                            if (resolve_reject.timeout_handle) { clearTimeout(resolve_reject.timeout_handle); }
+                            if (data.code == 0) {
+                                resolve_reject.resolve(data.data);
+                            }
+                            else {
+                                resolve_reject.reject(data);
+                            }
+                        }
+                        else {
+                            //如果 resolve_reject.timeout_handle === null 表示已经超时
+                            throw new WSTimeOutReceiveRrror('websocket time out receive', data);
                         }
                     }
-                    else if (new_ctx.status == 200 && new_ctx.body !== undefined) {
-                        await new_ctx.websocket.send(new_ctx.body);
+                    else {
+                        //无需回复，但客户端依旧回复的内容
+                        emitter.emit('receive_error_reply', { data, new_ctx });
                     }
-                    return Promise.resolve();
-                };
-                await controller_fn(new_ctx, new_next);
+                }
+                else {
+                    let send = (method, path, send_data, id) => {
+                        if (path === undefined && send_data === undefined && id === undefined) {
+                            send_data = method;
+                            method = data.method;
+                            path = data.path;
+                        }
+                        let data_obj = { code: 0, message: 'success', method, path, data: send_data };
+                        if (id) { data_obj.id = id; }
+                        arguments[0] = JSON.stringify(data_obj);
+                        return old_send.apply(ctx.websocket, arguments);
+                    };
+                    new_ctx.websocket.send = function (method, path, send_data) {
+                        return send(method, path, send_data);
+                    };
+                    new_ctx.websocket.sendAsync = function (method, path, send_data, timeout) {
+                        return new Promise((resolve, reject) => {
+                            let id = getNewSendID();
+                            send(method, path, send_data, id);
+                            let timeout_handle = undefined;
+                            let time_out = timeout || parseInt(system_cfg.websocket_send_time_out);
+                            if (time_out > 0) {
+                                let timeout_fn = function () {
+                                    if (AsyncObj[id]) { AsyncObj[id].timeout_handle = null; }
+                                    reject(new WSTimeOutRrror('websocket time out:' + time_out, { id, method, path, data: send_data }));
+                                }
+                                timeout_handle = setTimeout(timeout_fn, time_out);
+                            }
+                            AsyncObj[id] = { resolve: resolve, reject: reject, timeout_handle: timeout_handle };
+                        });
+                    };
+
+                    new_ctx.websocket.reply = function (send_data) {
+                        if (data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
+                            arguments[0] = JSON.stringify({
+                                code: 0,
+                                message: 'success',
+                                id: data.id,
+                                method: data.method,
+                                path: data.path,
+                                data: send_data
+                            });
+                            return old_send.apply(ctx.websocket, arguments);
+                        }
+                        else {
+                            let new_error = new Error("websocket: cannot reply");
+                            new_error.name = 'ws_cannot_reply';
+                            new_error.data = data;
+                            throw new_error;
+                        }
+                    };
+
+                    //新 error_send 函数 默认添加method、path两个参数
+                    let old_error_send = new_ctx.websocket.error_send;
+                    new_ctx.websocket.error_send = function (error) {
+                        error.data = Object.assign({ id: data.id, method: data.method, path: data.path }, error.data);
+                        arguments[0] = error;
+                        return old_error_send.apply(ctx.websocket, arguments);
+                    };
+                    new_ctx.websocket.error_reply = new_ctx.websocket.error_send;
+
+                    let new_next = async () => {
+                        if (new_ctx.status === 0) {
+                            if ((new_ctx.matched === undefined)
+                                || (isArray(new_ctx.matched) && new_ctx.matched.length <= 0)
+                            ) {
+                                new_ctx.status = 404;
+                                throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, data);
+                            }
+                        }
+                        else if (new_ctx.status == 200 && new_ctx.body !== undefined && data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
+                            new_ctx.websocket.reply(new_ctx.body);
+                        }
+                        return Promise.resolve();
+                    };
+                    await controller_fn(new_ctx, new_next);
+                }
             };
             return next();
         };
