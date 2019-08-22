@@ -18,7 +18,7 @@ async function router_func(controller_obj, func_name, rules, ctx) {
         let RuleAttributeNames = undefined;
 
         //如果定义了相关参数验证规则，就对参数进行验证
-        if (typeof(rules) == 'function') {
+        if (typeof (rules) == 'function') {
             Rules = await rules(ctx, ...ObjtoArray(ctx.params));
         } else {
             Rules = rules;
@@ -51,6 +51,10 @@ async function router_func(controller_obj, func_name, rules, ctx) {
 let Object_Arr = {};
 
 class LaravelRouter extends KoaRouter {
+    constructor(init_path) {
+        super();
+        this.init_path = init_path || '.';
+    }
 
     getObject(path, controllerClass, func_name) {
         if (Object_Arr[path] === undefined) {
@@ -64,18 +68,18 @@ class LaravelRouter extends KoaRouter {
     }
 
     authRoutes(controller_dir = 'auth') {
-        this.get('/auth/info', controller_dir+'/login@getAuthInfo');
-        this.get('/auth/captcha/:field_name', controller_dir+'/captcha@index');
-        this.get('/auth/captcha/email/:field_name/:email/', controller_dir+'/captcha@email');
-        if(auth_cfg.auth_routes_use_ratelimit){this.use('/auth/captcha/mobile', ratelimit('mobile').web);}//访问限制中间件
-        this.any('/auth/captcha/mobile/:field_name/:phoneNumber/', controller_dir+'/captcha@mobile');
-        if(auth_cfg.auth_routes_use_ratelimit){this.use('/auth/login', ratelimit('login').web);}//访问限制中间件
-        this.post('/auth/login', controller_dir+'/login@login');
-        this.get('/auth/retoken/:long/', controller_dir+'/login@retoken');
-        this.any('/auth/logout', controller_dir+'/login@logout');
-        this.post('/auth/register', controller_dir+'/register@register');
-        this.post('/auth/resetpassword', controller_dir+'/password@resetpassword');
-        this.post('/auth/forgotpassword', controller_dir+'/password@forgotpassword');
+        this.get('/auth/info', controller_dir + '/login@getAuthInfo');
+        this.get('/auth/captcha/:field_name', controller_dir + '/captcha@index');
+        this.get('/auth/captcha/email/:field_name/:email/', controller_dir + '/captcha@email');
+        if (auth_cfg.auth_routes_use_ratelimit) { this.use('/auth/captcha/mobile', ratelimit('mobile').web); }//访问限制中间件
+        this.any('/auth/captcha/mobile/:field_name/:phoneNumber/', controller_dir + '/captcha@mobile');
+        if (auth_cfg.auth_routes_use_ratelimit) { this.use('/auth/login', ratelimit('login').web); }//访问限制中间件
+        this.post('/auth/login', controller_dir + '/login@login');
+        this.get('/auth/retoken/:long/', controller_dir + '/login@retoken');
+        this.any('/auth/logout', controller_dir + '/login@logout');
+        this.post('/auth/register', controller_dir + '/register@register');
+        this.post('/auth/resetpassword', controller_dir + '/password@resetpassword');
+        this.post('/auth/forgotpassword', controller_dir + '/password@forgotpassword');
     }
 
     buildRouter(router_type, router_str, controller_str, info = {}) {
@@ -84,7 +88,7 @@ class LaravelRouter extends KoaRouter {
         let controller_fn_config = { only: info.only, except: info.except };
         let controller_ok = false;
         let controller_arr = [];
-        if (typeof(router_type) == 'string' && typeof(router_str) == 'string' && typeof(controller_str) == 'string') {
+        if (typeof (router_type) == 'string' && typeof (router_str) == 'string' && typeof (controller_str) == 'string') {
             controller_arr = controller_str.split("@");
             controller_ok = ((router_type == 'resource' && controller_arr.length == 1) || (controller_arr.length == 2));
             if ((!controller_ok) && (router_type != 'resource') && (controller_arr.length == 1)) {
@@ -99,15 +103,15 @@ class LaravelRouter extends KoaRouter {
 
         if (controller_ok) {
             let controller_obj = {};
-            let Obj_path = path.join(appdir, './controllers/' , controller_arr[0]);
+            let Obj_path = path.join(appdir, this.init_path + '/controllers/', controller_arr[0]);
             let Controller = require(Obj_path);
-            if (typeof(Controller) == 'function') {
+            if (typeof (Controller) == 'function') {
                 controller_obj = this.getObject(Obj_path, Controller);
             } else {
                 if (Controller.__esModule === true) {
-                    if (typeof(Controller.default) == "function") {
+                    if (typeof (Controller.default) == "function") {
                         controller_obj = this.getObject(Obj_path, Controller, 'default');
-                    } else if (typeof(Controller.default) == "object") {
+                    } else if (typeof (Controller.default) == "object") {
                         controller_obj = Controller.default;
                     } else {
                         controller_obj = Controller;
@@ -118,18 +122,18 @@ class LaravelRouter extends KoaRouter {
             //rules处理开始
             let rules_obj = undefined;
             let rules_fnName = '';
-            if (typeof(rules_str) == 'string') {
+            if (typeof (rules_str) == 'string') {
                 let rules_arr = rules_str.split("@");
-                let Obj_path = path.join(appdir, './rules/' , rules_arr[0]);
+                let Obj_path = path.join(appdir, this.init_path + '/rules/', rules_arr[0]);
                 let Rules = require(Obj_path);
 
-                if (typeof(Rules) == 'function') {
+                if (typeof (Rules) == 'function') {
                     rules_obj = this.getObject(Obj_path, Rules);
                 } else {
                     if (Rules.__esModule === true) {
-                        if (typeof(Rules.default) == "function") {
+                        if (typeof (Rules.default) == "function") {
                             rules_obj = this.getObject(Obj_path, Rules, 'default');
-                        } else if (typeof(Rules.default) == "object") {
+                        } else if (typeof (Rules.default) == "object") {
                             rules_obj = Rules.default;
                         } else {
                             rules_obj = Rules;
@@ -142,16 +146,16 @@ class LaravelRouter extends KoaRouter {
                 }
             } else {
                 try {
-                    let Obj_path = path.join(appdir, './rules/' , controller_arr[0]);
+                    let Obj_path = path.join(appdir, this.init_path + '/rules/', controller_arr[0]);
                     let Rules = require(Obj_path);
 
-                    if (typeof(Rules) == 'function') {
+                    if (typeof (Rules) == 'function') {
                         rules_obj = this.getObject(Obj_path, Rules);
                     } else {
                         if (Rules.__esModule === true) {
-                            if (typeof(Rules.default) == "function") {
+                            if (typeof (Rules.default) == "function") {
                                 rules_obj = this.getObject(Obj_path, Rules, 'default');
-                            } else if (typeof(Rules.default) == "object") {
+                            } else if (typeof (Rules.default) == "object") {
                                 rules_obj = Rules.default;
                             } else {
                                 rules_obj = Rules;
@@ -217,7 +221,7 @@ class LaravelRouter extends KoaRouter {
                         all_type = false;
                         let fn_config_arr = [];
 
-                        if (typeof(controller_fn_config.only) == 'string') {
+                        if (typeof (controller_fn_config.only) == 'string') {
                             fn_config_arr = controller_fn_config.only.split(',');
                         } else if (isArray(controller_fn_config.only)) {
                             [...fn_config_arr] = controller_fn_config.only;
@@ -234,7 +238,7 @@ class LaravelRouter extends KoaRouter {
 
                         let not_fn_config_arr = [];
 
-                        if (typeof(controller_fn_config.except) == 'string') {
+                        if (typeof (controller_fn_config.except) == 'string') {
                             not_fn_config_arr = controller_fn_config.except.split(',');
                         } else if (isArray(controller_fn_config.except)) {
                             [...not_fn_config_arr] = controller_fn_config.except;
@@ -254,7 +258,7 @@ class LaravelRouter extends KoaRouter {
                     [...fn_name_ok_arr] = fn_name_arr;
                 }
 
-                if (typeof(router_name) == 'string') {
+                if (typeof (router_name) == 'string') {
                     if (router_name.length > 0) {
                         if (router_name[router_name.length - 1] != '.') {
                             router_name += '.';

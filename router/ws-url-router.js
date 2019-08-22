@@ -14,7 +14,7 @@ const Events = require2('tomjs/handlers/events');
 
 let emitter = Events.getEventEmitter('websocket');
 
-class WebsocketRouter {
+class WS_URL_Router {
     constructor() {
         this.router = new KoaRouter();
     }
@@ -127,7 +127,9 @@ class WebsocketRouter {
                         });
                     };
 
+                    let isRunNewNext = false;
                     new_ctx.websocket.reply = function (send_data) {
+                        isRunNewNext = true;
                         if (data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
                             arguments[0] = JSON.stringify({
                                 code: 0,
@@ -147,30 +149,27 @@ class WebsocketRouter {
                         }
                     };
 
-                    //新 error_send 函数 默认添加method、path两个参数
-                    let old_error_send = new_ctx.websocket.error_send;
-                    new_ctx.websocket.error_send = function (error) {
-                        error.data = Object.assign({ id: data.id, method: data.method, path: data.path }, error.data);
-                        arguments[0] = error;
-                        return old_error_send.apply(ctx.websocket, arguments);
-                    };
-                    new_ctx.websocket.error_reply = new_ctx.websocket.error_send;
-
                     let new_next = async () => {
-                        if (new_ctx.status === 0) {
-                            if ((new_ctx.matched === undefined)
-                                || (isArray(new_ctx.matched) && new_ctx.matched.length <= 0)
-                            ) {
-                                new_ctx.status = 404;
-                                throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, data);
+                        if (!isRunNewNext) {
+                            isRunNewNext = true;
+                            if (new_ctx.status === 0) {
+                                if ((new_ctx.matched === undefined)
+                                    || (isArray(new_ctx.matched) && new_ctx.matched.length <= 0)
+                                ) {
+                                    new_ctx.status = 404;
+                                    throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, data);
+                                }
                             }
-                        }
-                        else if (new_ctx.status == 200 && new_ctx.body !== undefined && data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
-                            new_ctx.websocket.reply(new_ctx.body);
+                            else if (new_ctx.status == 200 && new_ctx.body !== undefined && data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
+                                new_ctx.websocket.reply(new_ctx.body);
+                            }
                         }
                         return Promise.resolve();
                     };
                     await controller_fn(new_ctx, new_next);
+                    if (!isRunNewNext) {
+                        await new_next();
+                    }
                 }
             };
             return next();
@@ -207,4 +206,4 @@ class WebsocketRouter {
         return this.router.prefix.apply(this.router, arguments);
     }
 }
-module.exports = WebsocketRouter;
+module.exports = WS_URL_Router;
