@@ -9,6 +9,7 @@ const { isObject, isArray, isString, isFunction } = require2('tomjs/handlers/too
 const subdomain_cfg = require2('tomjs/configs')().subdomain;
 const system_cfg = require2('tomjs/configs')().system;
 const Events = require2('tomjs/handlers/events');
+const render = require2('tomjs/handlers/render');
 
 let emitter = Events.getEventEmitter('websocket');
 
@@ -21,6 +22,7 @@ class WS_URL_Router {
         let new_ctx = Object.assign({}, ctx);
         new_ctx.matched = undefined;
         new_ctx.res = {};
+        new_ctx.response = {};
         new_ctx.status = 0;
         new_ctx.subdomains = ctx.subdomains;
         new_ctx.ip = ctx.ip;
@@ -47,6 +49,9 @@ class WS_URL_Router {
                 return this._body;
             }
         });
+        new_ctx.render = async function (view_name, locals = {}, lang, root_path) {
+            new_ctx.body = await render(view_name, Object.assign({}, { ctx: new_ctx }, locals), lang, root_path);
+        }
         return new_ctx;
     }
 
