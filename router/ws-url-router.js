@@ -1,5 +1,6 @@
 const require2 = require('tomjs/handlers/require2');
 const path = require2('path');
+const WebSocket = require2('ws');
 const appdir = require2('tomjs/handlers/dir')();
 const BaseApiError = require2('tomjs/error/base_api_error');
 const WSRouterRrror = require2('tomjs/error/ws_router_error');
@@ -10,6 +11,7 @@ const subdomain_cfg = require2('tomjs/configs')().subdomain;
 const system_cfg = require2('tomjs/configs')().system;
 const Events = require2('tomjs/handlers/events');
 const render = require2('tomjs/handlers/render');
+const AllWsServers = require2('tomjs/handlers/all_ws_server').getAllWS();
 
 let emitter = Events.getEventEmitter('websocket');
 
@@ -51,7 +53,41 @@ class WS_URL_Router {
         });
         new_ctx.render = async function (view_name, locals = {}, lang, root_path) {
             new_ctx.body = await render(view_name, Object.assign({}, { ctx: new_ctx }, locals), lang, root_path);
-        }
+        };
+        new_ctx.websocket_server.broadcast_send = function (send_data) {
+            if (AllWsServers.ws) {
+                AllWsServers.ws.clients.forEach(function each(client) {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(send_data);
+                    }
+                });
+            }
+            if (AllWsServers.wss) {
+                AllWsServers.wss.clients.forEach(function each(client) {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(send_data);
+                    }
+                });
+            }
+        };
+        new_ctx.websocket.broadcast_send = async function (send_data) {
+            let user = await ctx.auth.user();
+            let ws_data = { method: data.method, path: data.path, data: send_data, sender_id: user.id, sender_name: user.name };
+            if (AllWsServers.ws) {
+                AllWsServers.ws.clients.forEach(function each(client) {
+                    if (client !== new_ctx.websocket && client.readyState === WebSocket.OPEN) {
+                        client.send(ws_data);
+                    }
+                });
+            }
+            if (AllWsServers.wss) {
+                AllWsServers.wss.clients.forEach(function each(client) {
+                    if (client !== new_ctx.websocket && client.readyState === WebSocket.OPEN) {
+                        client.send(ws_data);
+                    }
+                });
+            }
+        };
         return new_ctx;
     }
 
@@ -92,7 +128,7 @@ class WS_URL_Router {
                     }
                 }
                 else {
-                    let send = (method, path, send_data, id) => {
+                    let send = (method, path, send_data, user_id, user_name, id) => {
                         if (path === undefined && send_data === undefined && id === undefined) {
                             send_data = method;
                             method = data.method;
@@ -101,6 +137,8 @@ class WS_URL_Router {
                         if (send_data === undefined) { send_data = {}; }
                         let data_obj = { code: 0, message: 'success', method, path, data: send_data };
                         if (id) { data_obj.id = id; }
+                        if (user_id) { data_obj.sender_id = user_id; }
+                        if (user_name) { data_obj.sender_name = user_name; }
                         arguments[0] = JSON.stringify(data_obj);
                         return old_send.apply(ctx.websocket, arguments);
                     };
@@ -110,7 +148,7 @@ class WS_URL_Router {
                     new_ctx.websocket.sendAsync = function (method, path, send_data, timeout) {
                         return new Promise((resolve, reject) => {
                             let id = getNewSendID();
-                            send(method, path, send_data, id);
+                            send(method, path, send_data, undefined, undefined, id);
                             let timeout_handle = undefined;
                             let time_out = timeout || parseInt(system_cfg.websocket_send_time_out);
                             if (time_out > 0) {

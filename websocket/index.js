@@ -16,8 +16,10 @@ const websocket_lang = require2('tomjs/middleware/websocket_lang');
 const websocket_onmessage = require2('tomjs/middleware/websocket_onmessage');
 const ws_init = require(path.join(app_dir, './init/websocket'));//提供用户第一时间初始化ws使用
 const ws_end_init = require(path.join(appdir, './websocket'));
+const AllWsServer = require2('tomjs/handlers/all_ws_server');
 
 async function initWS(server_ws, isWSS) {
+    AllWsServer.setWS(server_ws.ws.server, isWSS);
     server_ws = await ws_init(server_ws, isWSS);
     let ws = server_ws.ws;
     ws.use(websocket_lang);

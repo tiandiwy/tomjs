@@ -15,16 +15,7 @@ module.exports = async function (ctx, next) {
             message: 'success',
             data: data
         }
-        if (data.id) {
-            new_data.id = data.id;
-        }
-        if (data.path) {
-            new_data.path = data.path;
-        }
-        if (data.method) {
-            new_data.method = data.method;
-        }
-        arguments[0] = JSON.stringify(new_data);
+        arguments[0] = JSON.stringify(Object.assign({}, new_data, data));
         return ctx.websocket.old_send.apply(ctx.websocket, arguments);
     };
 
