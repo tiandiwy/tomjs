@@ -90,18 +90,10 @@ module.exports = async function (ctx, next) {
                         delete err_obj.id;
                     }
                 }
-
-                if (!err_obj.id) {
-                    isSend = false;
-                }
-                if (!isSend) {
-                    //原本需要发送的错误，但根据判断没有合法的ID号，不能进行发生的错误，进行事件通知
-                    emitter.emit('error_not_send', { err_obj, ctx });
-                }
             }
         }
         if (isSend) {
-            emitter.emit('error_send', { err_obj, ctx });
+            emitter.emit('error_send', { error: err_obj, ctx });
             ctx.websocket.old_send(JSON.stringify(err_obj));
         }
     };
