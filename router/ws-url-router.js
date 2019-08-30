@@ -11,7 +11,6 @@ const subdomain_cfg = require2('tomjs/configs')().subdomain;
 const system_cfg = require2('tomjs/configs')().system;
 const Events = require2('tomjs/handlers/events');
 const render = require2('tomjs/handlers/render');
-const AllWsServers = require2('tomjs/handlers/all_ws_server').getAllWS();
 
 let emitter = Events.getEventEmitter('websocket');
 
@@ -54,40 +53,74 @@ class WS_URL_Router {
         new_ctx.render = async function (view_name, locals = {}, lang, root_path) {
             new_ctx.body = await render(view_name, Object.assign({}, { ctx: new_ctx }, locals), lang, root_path);
         };
-        new_ctx.websocket_server.broadcast_send = function (send_data) {
-            if (AllWsServers.ws) {
-                AllWsServers.ws.clients.forEach(function each(client) {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(send_data);
-                    }
-                });
+
+        let broadcast = async function (send_data, all = false, type = 'all') {
+            let iCount = 0;
+            let ws_data = undefined;
+            if (!isObject(send_data) || !send_data.data) {
+                ws_data = { data: send_data };
             }
-            if (AllWsServers.wss) {
-                AllWsServers.wss.clients.forEach(function each(client) {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(send_data);
-                    }
-                });
+            else {
+                ws_data = send_data;
             }
+            if (!all) {
+                let user = await ctx.auth.user();
+                ws_data = Object.assign({}, { method: data.method, path: data.path, sender_id: user.id, sender_name: user.name }, ws_data);
+            }
+            else{
+                ws_data = Object.assign({}, { method: data.method, path: data.path }, ws_data);
+            }
+            if (type == 'all' || type == 'ws') {
+                if (new_ctx.websocket.servers.ws) {
+                    new_ctx.websocket.servers.ws.clients.forEach(function each(client) {
+                        if ((all || client !== new_ctx.websocket) && client.readyState === WebSocket.OPEN) {
+                            client.send(ws_data);
+                            iCount++;
+                        }
+                    });
+                }
+            }
+            if (type == 'all' || type == 'wss') {
+                if (new_ctx.websocket.servers.wss) {
+                    new_ctx.websocket.servers.wss.clients.forEach(function each(client) {
+                        if ((all || client !== new_ctx.websocket) && client.readyState === WebSocket.OPEN) {
+                            client.send(ws_data);
+                            iCount++;
+                        }
+                    });
+                }
+            }
+            return iCount;
         };
-        new_ctx.websocket.broadcast_send = async function (send_data) {
-            let user = await ctx.auth.user();
-            let ws_data = { method: data.method, path: data.path, data: send_data, sender_id: user.id, sender_name: user.name };
-            if (AllWsServers.ws) {
-                AllWsServers.ws.clients.forEach(function each(client) {
-                    if (client !== new_ctx.websocket && client.readyState === WebSocket.OPEN) {
-                        client.send(ws_data);
-                    }
-                });
-            }
-            if (AllWsServers.wss) {
-                AllWsServers.wss.clients.forEach(function each(client) {
-                    if (client !== new_ctx.websocket && client.readyState === WebSocket.OPEN) {
-                        client.send(ws_data);
-                    }
-                });
-            }
+
+        new_ctx.websocket._broadcast = broadcast;
+        new_ctx.websocket.all_broadcast = function (send_data) {
+            return broadcast(send_data, true, 'all');
         };
+        new_ctx.websocket.servers.all_broadcast = new_ctx.websocket.all_broadcast;
+
+        new_ctx.websocket.broadcast = async function (send_data) {
+            return broadcast(send_data, false, 'all');
+        };
+        new_ctx.websocket.servers.broadcast = new_ctx.websocket.broadcast;
+
+        if (isObject(new_ctx.websocket.servers.ws)) {
+            new_ctx.websocket.servers.ws.all_broadcast = function (send_data) {
+                return broadcast(send_data, true, 'ws');
+            };
+            new_ctx.websocket.servers.ws.broadcast = function (send_data) {
+                return broadcast(send_data, false, 'ws');
+            };
+        }
+        if (isObject(new_ctx.websocket.servers.wss)) {
+            new_ctx.websocket.servers.wss.all_broadcast = function (send_data) {
+                return broadcast(send_data, true, 'wss');
+            };
+            new_ctx.websocket.servers.wss.broadcast = function (send_data) {
+                return broadcast(send_data, false, 'wss');
+            };
+        }
+
         return new_ctx;
     }
 
