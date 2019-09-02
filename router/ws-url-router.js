@@ -8,7 +8,7 @@ const WSTimeOutRrror = require2('tomjs/error/ws_timeout_error');
 const KoaRouter = require2('koa-router');
 const { isObject, isArray, isString, isFunction } = require2('tomjs/handlers/tools');
 const subdomain_cfg = require2('tomjs/configs')().subdomain;
-const system_cfg = require2('tomjs/configs')().system;
+const websocket_cfg = require2('tomjs/configs')().websocket;
 const Events = require2('tomjs/handlers/events');
 const render = require2('tomjs/handlers/render');
 
@@ -57,17 +57,26 @@ class WS_URL_Router {
         let broadcast = async function (send_data, all = false, type = 'all') {
             let iCount = 0;
             let ws_data = undefined;
-            if (!isObject(send_data) || !send_data.data) {
+            if (!isObject(send_data)) {
+                ws_data = { data: send_data };
+            }
+            else if (!send_data.data) {
                 ws_data = { data: send_data };
             }
             else {
                 ws_data = send_data;
             }
             if (!all) {
-                let user = await ctx.auth.user();
-                ws_data = Object.assign({}, { method: data.method, path: data.path, sender_id: user.id, sender_name: user.name }, ws_data);
+                let user = ctx.auth.USER;
+                if (!user) {
+                    user = await ctx.auth.user();
+                }
+                if (!user) {
+                    user = { id: undefined, name: undefined };
+                }
+                ws_data = Object.assign({}, { method: data.method, path: data.path, socket_id: new_ctx.websocket.socket_id, sender_id: user.id, sender_name: user.name }, ws_data);
             }
-            else{
+            else {
                 ws_data = Object.assign({}, { method: data.method, path: data.path }, ws_data);
             }
             if (type == 'all' || type == 'ws') {
@@ -104,6 +113,16 @@ class WS_URL_Router {
         };
         new_ctx.websocket.servers.broadcast = new_ctx.websocket.broadcast;
 
+        //bind room相关函数
+        new_ctx.websocket.createRoom = new_ctx.websocket.servers.createRoom.bind(new_ctx.websocket.servers, new_ctx);
+        new_ctx.websocket.deleteRoom = new_ctx.websocket.servers.deleteRoom.bind(new_ctx.websocket.servers, new_ctx);
+        new_ctx.websocket.changeRoomAdmin = new_ctx.websocket.servers.changeRoomAdmin.bind(new_ctx.websocket.servers, new_ctx);
+        new_ctx.websocket.deleteRoom = new_ctx.websocket.servers.deleteRoom.bind(new_ctx.websocket.servers, new_ctx);
+        new_ctx.websocket.joinRoom = new_ctx.websocket.servers.joinRoom.bind(new_ctx.websocket.servers, new_ctx);
+        new_ctx.websocket.leaveRoom = new_ctx.websocket.servers.leaveRoom.bind(new_ctx.websocket.servers, new_ctx);
+        new_ctx.websocket.broadcastRoom = new_ctx.websocket.servers.broadcastRoom.bind(new_ctx.websocket.servers, new_ctx, data);
+
+
         if (isObject(new_ctx.websocket.servers.ws)) {
             new_ctx.websocket.servers.ws.all_broadcast = function (send_data) {
                 return broadcast(send_data, true, 'ws');
@@ -132,7 +151,7 @@ class WS_URL_Router {
             let iSendID = 0;
             function getNewSendID() {
                 iSendID++;
-                return system_cfg.websocket_id_head + iSendID;
+                return websocket_cfg.websocket_id_head + iSendID;
             }
             let AsyncObj = {};
             let old_send = ctx.websocket.old_send;
@@ -143,7 +162,7 @@ class WS_URL_Router {
                 }
                 let new_ctx = this.cloneCTX(ctx, data);
 
-                if (isObject(data) && data.id && data.id.startsWith(system_cfg.websocket_id_head)) {
+                if (isObject(data) && data.id && data.id.startsWith(websocket_cfg.websocket_id_head)) {
                     if (AsyncObj[data.id]) {
                         var resolve_reject = AsyncObj[data.id];
                         delete AsyncObj[data.id];
@@ -161,19 +180,19 @@ class WS_URL_Router {
                     }
                 }
                 else {
+                    let old_send = ctx.websocket.send;
                     let send = (method, path, send_data, user_id, user_name, id) => {
-                        if (path === undefined && send_data === undefined && id === undefined) {
-                            send_data = method;
-                            method = data.method;
-                            path = data.path;
+                        if (path === undefined && send_data === undefined && id === undefined && user_id === undefined && user_name === undefined) {
+                            return old_send(method);
                         }
-                        if (send_data === undefined) { send_data = {}; }
-                        let data_obj = { code: 0, message: 'success', method, path, data: send_data };
-                        if (id) { data_obj.id = id; }
-                        if (user_id) { data_obj.sender_id = user_id; }
-                        if (user_name) { data_obj.sender_name = user_name; }
-                        arguments[0] = JSON.stringify(data_obj);
-                        return old_send.apply(ctx.websocket, arguments);
+                        else {
+                            if (send_data === undefined) { send_data = {}; }
+                            let data_obj = { code: 0, message: 'success', method, path, data: send_data };
+                            if (id) { data_obj.id = id; }
+                            if (user_id) { data_obj.sender_id = user_id; }
+                            if (user_name) { data_obj.sender_name = user_name; }
+                            return old_send(data_obj);
+                        }
                     };
                     new_ctx.websocket.send = function (method, path, send_data) {
                         return send(method, path, send_data);
@@ -183,7 +202,7 @@ class WS_URL_Router {
                             let id = getNewSendID();
                             send(method, path, send_data, undefined, undefined, id);
                             let timeout_handle = undefined;
-                            let time_out = timeout || parseInt(system_cfg.websocket_send_time_out);
+                            let time_out = timeout || parseInt(websocket_cfg.websocket_send_time_out);
                             if (time_out > 0) {
                                 let timeout_fn = function () {
                                     if (AsyncObj[id]) { delete AsyncObj[id] }
@@ -197,18 +216,25 @@ class WS_URL_Router {
 
                     let isRunNewNext = false;
                     new_ctx.websocket.reply = function (send_data) {
-                        if (send_data === undefined) { send_data = {}; }
+                        let ws_data = undefined;
+                        if (!isObject(send_data)) {
+                            ws_data = { data: send_data };
+                        }
+                        else if (!send_data.data) {
+                            ws_data = { data: send_data };
+                        }
+                        else {
+                            ws_data = send_data;
+                        }
                         isRunNewNext = true;
-                        if (data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
-                            arguments[0] = JSON.stringify({
+                        if (data.id && !data.id.startsWith(websocket_cfg.websocket_id_head)) {
+                            return old_send(Object.assign({}, {
                                 code: 0,
                                 message: 'success',
                                 id: data.id,
                                 method: data.method,
                                 path: data.path,
-                                data: send_data
-                            });
-                            return old_send.apply(ctx.websocket, arguments);
+                            }, ws_data));
                         }
                         else {
                             let new_error = new Error("websocket: cannot reply");
@@ -229,7 +255,7 @@ class WS_URL_Router {
                                     throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, data);
                                 }
                             }
-                            else if (new_ctx.status == 200 && data.id && !data.id.startsWith(system_cfg.websocket_id_head)) {
+                            else if (new_ctx.status == 200 && data.id && !data.id.startsWith(websocket_cfg.websocket_id_head)) {
                                 new_ctx.websocket.reply(new_ctx.body);
                             }
                         }

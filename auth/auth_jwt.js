@@ -11,7 +11,7 @@ const getTime = require2('tomjs/handlers/gettimes');
 const log4js = require2('tomjs/handlers/log4js');
 const BaseApiError = require2('tomjs/error/base_api_error');
 let authLog = console;
-if (typeof(auth_cfg.log4js_category) && (auth_cfg.log4js_category.length > 0)) {
+if (typeof (auth_cfg.log4js_category) && (auth_cfg.log4js_category.length > 0)) {
     authLog = log4js.getLogger(auth_cfg.log4js_category);
 }
 
@@ -39,19 +39,19 @@ let opt = {
                     }
                 }
             }
-            ctx.websocket.error_send(new BaseApiError(BaseApiError.UNAUTHORIZED, 'Bad Authorization query format. Format is "[url]?Authorization=Bearer <token>"',ctx.query));
+            ctx.websocket.error_send(new BaseApiError(BaseApiError.UNAUTHORIZED, 'Bad Authorization query format. Format is "[url]?Authorization=Bearer <token>"', ctx.query));
             ctx.websocket.terminate();
         }
         else {
             return false;
         }
     },
-    isRevoked: async(ctx, decodedToken, token) => {
+    isRevoked: async (ctx, decodedToken, token) => {
 
         //写入token相关信息
         ctx.state[auth_cfg.jwt_key] = decodedToken;
         ctx.state[auth_cfg.jwt_tokenkey] = token;
-        
+
         let re = false;
         if (auth_cfg.jwt_key_check_token_version) {
             try {
@@ -63,8 +63,13 @@ let opt = {
                 } else { re = true; }
             } catch (e) { re = true; }
         }
-        if (!re && (typeof(userIsRevoked) == "function")) {
+        if (!re && (typeof (userIsRevoked) == "function")) {
             re = await userIsRevoked(ctx, decodedToken, token); //获取用户自定义isRevoked结果
+        }
+        if (!re && isObject(ctx.websocket)) {
+            if (isObject(ctx.websocket.servers)) {
+                ctx.websocket.servers.addUser(ctx);
+            }
         }
         if (!re &&
             auth_cfg.jwt_rewirte_cookie &&
@@ -72,7 +77,7 @@ let opt = {
             isObject(ctx.state)) {
             let times = decodedToken[auth_cfg.jwt_key_exp_is_long] ? getTime(auth_cfg.jwt_rewirte_cookie_remaining_long, 86400) : getTime(auth_cfg.jwt_rewirte_cookie_remaining, 1800);
             if ((decodedToken.exp - new Date()
-                    .getTime() / 1000 - times) <= 0) {
+                .getTime() / 1000 - times) <= 0) {
                 if (!isObject(ctx.state[auth_cfg.jwt_key])) {
                     const dels = ['iat', 'exp', 'iss', 'nbf', 'aud', 'sub']; //需要排除的属性
                     let obj = Object.assign({}, decodedToken);
@@ -90,14 +95,14 @@ let opt = {
         return re;
     },
 };
-if (typeof(auth_cfg.jwt_audience) == "string" || isArray(auth_cfg.jwt_audience)) {
+if (typeof (auth_cfg.jwt_audience) == "string" || isArray(auth_cfg.jwt_audience)) {
     opt['audience'] = auth_cfg.jwt_audience;
 }
-if (typeof(auth_cfg.jwt_issuer) == "string" || isArray(auth_cfg.jwt_issuer)) {
+if (typeof (auth_cfg.jwt_issuer) == "string" || isArray(auth_cfg.jwt_issuer)) {
     opt['issuer'] = auth_cfg.jwt_issuer;
 }
 
-module.exports = (type = 'web')=>{
+module.exports = (type = 'web') => {
     if (auth_cfg.jwt_auth_all_path) {
         return koa_jwt(opt);
     } else {

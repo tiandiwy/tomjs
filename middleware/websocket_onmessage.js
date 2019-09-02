@@ -21,7 +21,7 @@ module.exports = async (ctx, next) => {
             let data = JSON.parse(message);
             if (isString(data.method)) {
                 data.method = data.method.trim().toUpperCase();
-            }            
+            }
             let no_auto_error_send = undefined;
             if (isFunction(ctx.websocket.on_error)) {
                 no_auto_error_send = await ctx.websocket.on_error(error);
@@ -36,6 +36,9 @@ module.exports = async (ctx, next) => {
                 }
             }
         }
+    });
+    ctx.websocket.on('close', (code, reason) => {
+        ctx.websocket.servers.deleteSocket(ctx);
     });
     return next();
 }

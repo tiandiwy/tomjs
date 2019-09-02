@@ -12,11 +12,11 @@ exports.isClass = function (func_class) {
 }
 
 exports.isFunction = function (func) {
-    return typeof(func) == "function";
+    return typeof (func) == "function";
 }
 
 exports.isString = function (func) {
-    return typeof(func) == "string";
+    return typeof (func) == "string";
 }
 
 exports.clone = function (obj) {
@@ -24,4 +24,30 @@ exports.clone = function (obj) {
         Object.getPrototypeOf(obj),
         Object.getOwnPropertyDescriptors(obj)
     )
+}
+
+exports.arrDelete = function (arr, item, fn) {
+    let idx = undefined;
+    if (fn) {
+        idx = arr.findIndex(fn);
+    } else {
+        idx = arr.indexOf(item);
+    }
+    if (idx >= 0) {
+        arr.splice(idx, 1);
+    }
+    return arr;
+}
+
+exports.arrAdd = function (arr, item, fn) {
+    let idx = undefined;
+    if (fn) {
+        idx = arr.findIndex(fn);
+    } else {
+        idx = arr.indexOf(item);
+    }
+    if (idx < 0) {
+        arr.push(item);
+    }
+    return arr;
 }
