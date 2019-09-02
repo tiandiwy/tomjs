@@ -3,7 +3,7 @@ const fs = require2('fs');
 const pluralize = require2('pluralize');
 const humps = require2('humps');
 const _ = require2('lodash');
-const { isObject, isArray, isClass, isFunction, isString, arrDelete, arrAdd } = require2('tomjs/handlers/base_tools');
+const { isObject, isArray, isClass, isFunction, isString, arrDelete, arrAdd, toBool } = require2('tomjs/handlers/base_tools');
 exports.isObject = isObject;
 exports.isArray = isArray;
 exports.isClass = isClass;
@@ -11,6 +11,7 @@ exports.isFunction = isFunction;
 exports.isString = isString;
 exports.arrDelete = arrDelete;
 exports.arrAdd = arrAdd;
+exports.toBool = toBool;
 
 exports.ObjtoArray = (obj) => {
     let arr = []
@@ -18,13 +19,6 @@ exports.ObjtoArray = (obj) => {
         arr.push(obj[i]);
     }
     return arr;
-}
-
-exports.toBool = (val) => {
-    if (typeof (val) == 'string') {
-        if (val == 'false' || val == '0') { return false; }
-    } else if (val === undefined) { return undefined; }
-    return val ? true : false;
 }
 
 exports.toUnderlineName = (str) => {

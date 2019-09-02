@@ -222,7 +222,11 @@ class AllWSServers {
     }
 
     async broadcastRoom(ctx, data, room_name, send_data, all = false) {
-        if (this.rooms[room_name] && (this.rooms[room_name].users.includes(ctx) || !ctx)) {
+        let socket_id = undefined;
+        if (ctx) {
+            socket_id = ctx.websocket.getID();
+        }
+        if (this.rooms[room_name] && (this.rooms[room_name].users.find((val) => val.websocket.getID() === socket_id) || !ctx)) {
             let iCount = 0;
             let ws_data = undefined;
             if (!isObject(send_data)) {
@@ -249,7 +253,7 @@ class AllWSServers {
             }
 
             this.rooms[room_name].users.forEach(function each(client) {
-                if ((all || client !== ctx) && client.websocket.readyState === WebSocket.OPEN) {
+                if ((all || client.websocket.getID() !== socket_id) && client.websocket.readyState === WebSocket.OPEN) {
                     client.websocket.send(ws_data);
                     iCount++;
                 }

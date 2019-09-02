@@ -122,6 +122,11 @@ class WS_URL_Router {
         new_ctx.websocket.leaveRoom = new_ctx.websocket.servers.leaveRoom.bind(new_ctx.websocket.servers, new_ctx);
         new_ctx.websocket.broadcastRoom = new_ctx.websocket.servers.broadcastRoom.bind(new_ctx.websocket.servers, new_ctx, data);
 
+        new_ctx.websocket.sendSocket = new_ctx.websocket.servers.sendSocket.bind(new_ctx.websocket.servers);
+        new_ctx.websocket.sendSockets = new_ctx.websocket.servers.sendSockets.bind(new_ctx.websocket.servers);
+        new_ctx.websocket.sendUser = new_ctx.websocket.servers.sendUser.bind(new_ctx.websocket.servers);
+        new_ctx.websocket.sendUsers = new_ctx.websocket.servers.sendUsers.bind(new_ctx.websocket.servers);
+
 
         if (isObject(new_ctx.websocket.servers.ws)) {
             new_ctx.websocket.servers.ws.all_broadcast = function (send_data) {

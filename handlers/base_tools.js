@@ -51,3 +51,10 @@ exports.arrAdd = function (arr, item, fn) {
     }
     return arr;
 }
+
+exports.toBool = (val) => {
+    if (typeof (val) == 'string') {
+        if (val == 'false' || val == '0') { return false; }
+    } else if (val === undefined) { return undefined; }
+    return val ? true : false;
+}
