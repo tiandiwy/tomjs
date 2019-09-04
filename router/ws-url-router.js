@@ -9,6 +9,7 @@ const KoaRouter = require2('koa-router');
 const { isObject, isArray, isString, isFunction } = require2('tomjs/handlers/tools');
 const subdomain_cfg = require2('tomjs/configs')().subdomain;
 const websocket_cfg = require2('tomjs/configs')().websocket;
+const AllWsServers = require2('tomjs/handlers/all_ws_server').getAllWS();
 const Events = require2('tomjs/handlers/events');
 const render = require2('tomjs/handlers/render');
 
@@ -113,20 +114,8 @@ class WS_URL_Router {
         };
         new_ctx.websocket.servers.broadcast = new_ctx.websocket.broadcast;
 
-        //bind room相关函数
-        new_ctx.websocket.createRoom = new_ctx.websocket.servers.createRoom.bind(new_ctx.websocket.servers, new_ctx);
-        new_ctx.websocket.deleteRoom = new_ctx.websocket.servers.deleteRoom.bind(new_ctx.websocket.servers, new_ctx);
-        new_ctx.websocket.changeRoomAdmin = new_ctx.websocket.servers.changeRoomAdmin.bind(new_ctx.websocket.servers, new_ctx);
-        new_ctx.websocket.deleteRoom = new_ctx.websocket.servers.deleteRoom.bind(new_ctx.websocket.servers, new_ctx);
-        new_ctx.websocket.joinRoom = new_ctx.websocket.servers.joinRoom.bind(new_ctx.websocket.servers, new_ctx);
-        new_ctx.websocket.leaveRoom = new_ctx.websocket.servers.leaveRoom.bind(new_ctx.websocket.servers, new_ctx);
-        new_ctx.websocket.broadcastRoom = new_ctx.websocket.servers.broadcastRoom.bind(new_ctx.websocket.servers, new_ctx, data);
-
-        new_ctx.websocket.sendSocket = new_ctx.websocket.servers.sendSocket.bind(new_ctx.websocket.servers);
-        new_ctx.websocket.sendSockets = new_ctx.websocket.servers.sendSockets.bind(new_ctx.websocket.servers);
-        new_ctx.websocket.sendUser = new_ctx.websocket.servers.sendUser.bind(new_ctx.websocket.servers);
-        new_ctx.websocket.sendUsers = new_ctx.websocket.servers.sendUsers.bind(new_ctx.websocket.servers);
-
+        //再次bind room相关函数 确保new_ctx对象是最新的
+        AllWsServers.ctxBindBroadcastFn(new_ctx, data);
 
         if (isObject(new_ctx.websocket.servers.ws)) {
             new_ctx.websocket.servers.ws.all_broadcast = function (send_data) {
@@ -159,7 +148,62 @@ class WS_URL_Router {
                 return websocket_cfg.websocket_id_head + iSendID;
             }
             let AsyncObj = {};
-            let old_send = ctx.websocket.old_send;
+            let old_send = ctx.websocket.send;
+            let send = (method, path, send_data, user_id, user_name, id) => {
+                let ws_data = {};
+                if (path === undefined && send_data === undefined && user_id === undefined && user_name === undefined) {
+                    if (id) {
+                        if (!isObject(method)) {
+                            ws_data = { data: method };
+                        }
+                        else if (!method.data) {
+                            ws_data = { data: method };
+                        }
+                        else{
+                            ws_data = method;
+                        }
+                        if (id) { ws_data.id = id; }
+                    }
+                    else { ws_data = method; }
+                }
+                else {
+                    if (!isObject(send_data)) {
+                        ws_data = { data: send_data };
+                    }
+                    else if (!send_data.data) {
+                        ws_data = { data: send_data };
+                    }
+                    else{
+                        ws_data = send_data;
+                    }
+
+                    if (id) { ws_data.id = id; }
+                    if (method) { ws_data.method = method; }
+                    if (path) { ws_data.path = path; }
+                    if (user_id) { ws_data.sender_id = user_id; }
+                    if (user_name) { ws_data.sender_name = user_name; }
+                }
+                return old_send(ws_data);
+            };
+            ctx.websocket.send = function (method, path, send_data) {
+                return send(method, path, send_data);
+            };
+            ctx.websocket.sendAsync = function (method, path, send_data, timeout) {
+                return new Promise((resolve, reject) => {
+                    let id = getNewSendID();
+                    send(method, path, send_data, undefined, undefined, id);
+                    let timeout_handle = undefined;
+                    let time_out = timeout || parseInt(websocket_cfg.websocket_send_time_out);
+                    if (time_out > 0) {
+                        let timeout_fn = function () {
+                            if (AsyncObj[id]) { delete AsyncObj[id] }
+                            reject(new WSTimeOutRrror('websocket time out:' + time_out, { id, method, path, data: send_data }));
+                        }
+                        timeout_handle = setTimeout(timeout_fn, time_out);
+                    }
+                    AsyncObj[id] = { resolve: resolve, reject: reject, timeout_handle: timeout_handle };
+                });
+            };
 
             ctx.websocket.on_message = async (data) => {
                 if (isString(data.method)) {
@@ -185,40 +229,6 @@ class WS_URL_Router {
                     }
                 }
                 else {
-                    let old_send = ctx.websocket.send;
-                    let send = (method, path, send_data, user_id, user_name, id) => {
-                        if (path === undefined && send_data === undefined && id === undefined && user_id === undefined && user_name === undefined) {
-                            return old_send(method);
-                        }
-                        else {
-                            if (send_data === undefined) { send_data = {}; }
-                            let data_obj = { code: 0, message: 'success', method, path, data: send_data };
-                            if (id) { data_obj.id = id; }
-                            if (user_id) { data_obj.sender_id = user_id; }
-                            if (user_name) { data_obj.sender_name = user_name; }
-                            return old_send(data_obj);
-                        }
-                    };
-                    new_ctx.websocket.send = function (method, path, send_data) {
-                        return send(method, path, send_data);
-                    };
-                    new_ctx.websocket.sendAsync = function (method, path, send_data, timeout) {
-                        return new Promise((resolve, reject) => {
-                            let id = getNewSendID();
-                            send(method, path, send_data, undefined, undefined, id);
-                            let timeout_handle = undefined;
-                            let time_out = timeout || parseInt(websocket_cfg.websocket_send_time_out);
-                            if (time_out > 0) {
-                                let timeout_fn = function () {
-                                    if (AsyncObj[id]) { delete AsyncObj[id] }
-                                    reject(new WSTimeOutRrror('websocket time out:' + time_out, { id, method, path, data: send_data }));
-                                }
-                                timeout_handle = setTimeout(timeout_fn, time_out);
-                            }
-                            AsyncObj[id] = { resolve: resolve, reject: reject, timeout_handle: timeout_handle };
-                        });
-                    };
-
                     let isRunNewNext = false;
                     new_ctx.websocket.reply = function (send_data) {
                         let ws_data = undefined;

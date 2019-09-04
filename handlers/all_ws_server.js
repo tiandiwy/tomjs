@@ -1,6 +1,7 @@
 const require2 = require('tomjs/handlers/require2');
 const WebSocket = require2('ws');
 const websocket_cfg = require2('tomjs/configs')().websocket;
+const buildError = require2('tomjs/handlers/build_error');
 const Events = require2('tomjs/handlers/events');
 let emitter = Events.getEventEmitter('websocket');
 const { isObject, isArray, arrDelete, arrAdd } = require2('tomjs/handlers/base_tools');
@@ -9,12 +10,58 @@ const { getUserIDByCTX } = require2('tomjs/handlers/listener_tools');
 let all_sockets = {};
 let all_auth_users = {};
 
+async function sendDateByCTX(ctx, send_data) {
+    let ws_data = undefined;
+    if (!isObject(send_data)) {
+        ws_data = { data: send_data };
+    }
+    else if (!send_data.data) {
+        ws_data = { data: send_data };
+    }
+    else {
+        ws_data = send_data;
+    }
+    let user = ctx.auth.USER;
+    if (!user) {
+        user = await ctx.auth.user();
+    }
+
+    let data = {};
+    if (ctx.method) { data.method = ctx.method; }
+    if (ctx.path) { data.path = ctx.path; }
+    if (ctx.websocket) { data.socket_id = ctx.websocket.getID(); }
+    if (user) {
+        if (user.id) { data.sender_id = user.id; }
+        if (user.name) { data.sender_name = user.name; }
+    }
+    return Object.assign({}, data, ws_data);
+}
+
 class AllWSServers {
     constructor() {
         this.ws = undefined;
         this.wss = undefined;
         this.rooms = {};
     };
+
+    ctxBindBroadcastFn(ctx, data) {
+        ctx.websocket.createRoom = ctx.websocket.servers.createRoom.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.deleteRoom = ctx.websocket.servers.deleteRoom.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.changeRoomAdmin = ctx.websocket.servers.changeRoomAdmin.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.deleteRoom = ctx.websocket.servers.deleteRoom.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.joinRoom = ctx.websocket.servers.joinRoom.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.leaveRoom = ctx.websocket.servers.leaveRoom.bind(ctx.websocket.servers, ctx);
+        if (data) { ctx.websocket.broadcastRoom = ctx.websocket.servers.broadcastRoom.bind(ctx.websocket.servers, ctx, data); }
+
+        ctx.websocket.sendSocket = ctx.websocket.servers.sendSocketByCTX.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.sendSocketAsync = ctx.websocket.servers.sendSocketAsyncByCTX.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.sendSockets = ctx.websocket.servers.sendSocketsByCTX.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.sendSocketsAsync = ctx.websocket.servers.sendSocketsAsyncByCTX.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.sendUser = ctx.websocket.servers.sendUserByCTX.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.sendUserAsync = ctx.websocket.servers.sendUserAsyncByCTX.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.sendUsers = ctx.websocket.servers.sendUsersByCTX.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.sendUsersAsync = ctx.websocket.servers.sendUsersAsyncByCTX.bind(ctx.websocket.servers, ctx);
+    }
 
     addSocket(ctx) {
         let socket = ctx.websocket;
@@ -48,10 +95,7 @@ class AllWSServers {
     };
 
     getSocket(id) {
-        if (all_sockets[id]) {
-            return all_sockets[id];
-        }
-        else { return undefined; };
+        return all_sockets[id] || undefined;
     };
 
     getSockets(IDs) {
@@ -69,18 +113,65 @@ class AllWSServers {
 
     sendSocket(id, data) {
         let client = this.getSocket(id);
-        if (client) { client.send(data); return true; }
-        else { return false }
+        if (client) { client.socket.send(data); return true; }
+        else {
+            buildError('sendSocket id error', { id, data }, undefined, 'AllWSServers_sendSocket_error');
+        }
+    };
+
+    sendSocketAsync(id, data) {
+        let client = this.getSocket(id);
+        if (client) { return client.socket.sendAsync(data); }
+        else {
+            buildError('sendSocketAsync id error', { id, data }, undefined, 'AllWSServers_sendSocketAsync_error');
+        }
+    };
+
+    async sendSocketByCTX(ctx, id, data) {
+        if (ctx) {
+            data = await sendDateByCTX(ctx, data);
+        }
+        return this.sendSocket(id, data);
+    };
+
+    async sendSocketAsyncByCTX(ctx, id, data) {
+        if (ctx) {
+            data = await sendDateByCTX(ctx, data);
+        }
+        return await this.sendSocketAsync(id, data);
     };
 
     sendSockets(IDs, data) {
         let iCount = 0;
         let arr = this.getSockets(IDs);
         arr.forEach(function (client) {
-            client.send(data);
+            client.socket.send(data);
             iCount++;
         });
         return iCount;
+    };
+
+    sendSocketsAsync(IDs, data) {
+        let all = [];
+        let arr = this.getSockets(IDs);
+        arr.forEach(function (client) {
+            all.push(client.socket.sendAsync(data));
+        });
+        return Promise.all(all);
+    };
+
+    async sendSocketsByCTX(ctx, IDs, data) {
+        if (ctx) {
+            data = await sendDateByCTX(ctx, data);
+        }
+        return this.sendSockets(IDs, data);
+    };
+
+    async sendSocketsAsyncByCTX(ctx, IDs, data) {
+        if (ctx) {
+            data = await sendDateByCTX(ctx, data);
+        }
+        return await this.sendSocketsAsync(IDs, data);
     };
 
     addUser(ctx) {
@@ -115,15 +206,42 @@ class AllWSServers {
         }
         let clients = [];
         IDs.forEach(function (id) {
-            if (all_auth_users[id]) { clients = clients.concat(all_auth_users[idx]); }
+            if (all_auth_users[id]) { clients = clients.concat(all_auth_users[id]); }
         });
         return clients;
     };
 
     sendUser(id, data) {
-        let client = this.getUser(id);
-        if (client) { client.send(data); return true; }
-        else { return false }
+        let iCount = 0;
+        let clients = this.getUser(id);
+        clients.forEach(function (client) {
+            client.send(data);
+            iCount++;
+        });
+        return iCount;
+    };
+
+    sendUserAsync(id, data) {
+        let all = [];
+        let arr = this.getUser(id);
+        arr.forEach(function (client) {
+            all.push(client.sendAsync(data));
+        });
+        return Promise.all(all);
+    };
+
+    async sendUserByCTX(ctx, id, data) {
+        if (ctx) {
+            data = await sendDateByCTX(ctx, data);
+        }
+        return this.sendUser(id, data);
+    };
+
+    async sendUserAsyncByCTX(ctx, id, data) {
+        if (ctx) {
+            data = await sendDateByCTX(ctx, data);
+        }
+        return await this.sendUserAsync(id, data);
     };
 
     sendUsers(IDs, data) {
@@ -136,13 +254,38 @@ class AllWSServers {
         return iCount;
     };
 
-    createRoom(ctx, room_name) {
-        let socket_id = undefined;
+    sendUsersAsync(IDs, data) {
+        let all = [];
+        let arr = this.getUsers(IDs);
+        arr.forEach(function (client) {
+            all.push(client.sendAsync(data));
+        });
+        return Promise.all(all);
+    };
+
+    async sendUsersByCTX(ctx, IDs, data) {
         if (ctx) {
-            socket_id = ctx.websocket.getID();
+            data = await sendDateByCTX(ctx, data);
+        }
+        return this.sendUsers(IDs, data);
+    };
+
+    async sendUsersAsyncByCTX(ctx, IDs, data) {
+        if (ctx) {
+            data = await sendDateByCTX(ctx, data);
+        }
+        return await this.sendUsersAsync(IDs, data);
+    };
+
+    createRoom(ctx, room_name) {
+        let websocket = undefined;
+        if (ctx) {
+            if (ctx.websocket) {
+                websocket = ctx.websocket;
+            }
         }
         if (!this.rooms[room_name]) {
-            this.rooms[room_name] = { creater: socket_id, users: [] };
+            this.rooms[room_name] = { creater: websocket, users: [] };
             emitter.emit('create_room', { ctx, room_name });
             if (ctx && websocket_cfg.create_room_auto_join) {
                 this.joinRoom(ctx, room_name);
@@ -153,11 +296,13 @@ class AllWSServers {
 
     deleteRoom(ctx, room_name) {
         if (!this.rooms[room_name]) {
-            let socket_id = undefined;
+            let websocket = undefined;
             if (ctx) {
-                socket_id = ctx.websocket.getID();
+                if (ctx.websocket) {
+                    websocket = ctx.websocket;
+                }
             }
-            if ((!ctx) || (this.rooms[room_name].creater === socket_id)) {
+            if ((!ctx) || (this.rooms[room_name].creater === websocket)) {
                 this.rooms[room_name].users.forEach(function each(user_ctx) {
                     this.leaveRoom(user_ctx, room_name);
                 });
@@ -171,16 +316,20 @@ class AllWSServers {
 
     changeRoomAdmin(ctx, new_ctx, room_name) {
         if (!this.rooms[room_name]) {
-            let socket_id = undefined;
+            let socket = undefined;
             if (ctx) {
-                socket_id = ctx.websocket.getID();
-            }
-            if ((!ctx) || (this.rooms[room_name].creater === socket_id)) {
-                let new_socket_id = undefined;
-                if (new_ctx) {
-                    new_socket_id = new_ctx.websocket.getID();
+                if (ctx.websocket) {
+                    socket = ctx.websocket;
                 }
-                this.rooms[room_name].creater = new_socket_id;
+            }
+            if ((!ctx) || (this.rooms[room_name].creater === socket)) {
+                let new_socket = undefined;
+                if (new_ctx) {
+                    if (new_ctx.websocket) {
+                        new_socket = new_ctx.websocket;
+                    }
+                }
+                this.rooms[room_name].creater = new_socket;
                 emitter.emit('change_room_admin', { ctx, room_name, new_ctx });
                 return true;
             }
@@ -189,9 +338,16 @@ class AllWSServers {
     }
 
     joinRoom(ctx, room_name) {
-        let socket_id = ctx.websocket.getID();
+        let socket_id = undefined;
+        let socket = undefined;
+        if (ctx) {
+            if (ctx.websocket) {
+                socket = ctx.websocket;
+                socket_id = ctx.websocket.getID();
+            }
+        }
         let roomObj = this.createRoom(ctx, room_name);
-        if (!roomObj.users.find((val) => val.websocket.getID() === socket_id)) {
+        if (!roomObj.users.find((val) => val.websocket === socket)) {
             roomObj.users.push(ctx);
 
             //和all_sockets做关联 方便用户下线了，自动检测并离开聊天室
@@ -203,14 +359,21 @@ class AllWSServers {
     }
 
     leaveRoom(ctx, room_name, del_socket_room = true) {
-        let socket_id = ctx.websocket.getID();
+        let socket_id = undefined;
+        let socket = undefined;
+        if (ctx) {
+            if (ctx.websocket) {
+                socket = ctx.websocket;
+                socket_id = ctx.websocket.getID();
+            }
+        }
         if (this.rooms[room_name]) {
             if (del_socket_room) {
                 if (all_sockets[socket_id]) {
                     arrDelete(all_sockets[socket_id].rooms, room_name);
                 }
             }
-            arrDelete(this.rooms[room_name].users, ctx, (val) => val.websocket.getID() === socket_id);
+            arrDelete(this.rooms[room_name].users, ctx, (val) => val.websocket === socket);
             emitter.emit('leave_room', { ctx, room_name });
             if (websocket_cfg.auto_delete_empty_room) {
                 if (this.rooms[room_name].users.length <= 0) {
@@ -223,10 +386,14 @@ class AllWSServers {
 
     async broadcastRoom(ctx, data, room_name, send_data, all = false) {
         let socket_id = undefined;
+        let socket = undefined;
         if (ctx) {
-            socket_id = ctx.websocket.getID();
+            if (ctx.websocket) {
+                socket = ctx.websocket;
+                socket_id = ctx.websocket.getID();
+            }
         }
-        if (this.rooms[room_name] && (this.rooms[room_name].users.find((val) => val.websocket.getID() === socket_id) || !ctx)) {
+        if (this.rooms[room_name] && (this.rooms[room_name].users.find((val) => val.websocket === socket) || !ctx)) {
             let iCount = 0;
             let ws_data = undefined;
             if (!isObject(send_data)) {
@@ -246,14 +413,14 @@ class AllWSServers {
                 if (!user) {
                     user = { id: undefined, name: undefined };
                 }
-                ws_data = Object.assign({}, { method: data.method, path: data.path, room_name, socket_id: ctx.websocket.getID(), sender_id: user.id, sender_name: user.name }, ws_data);
+                ws_data = Object.assign({}, { method: data.method, path: data.path, room_name, socket_id, sender_id: user.id, sender_name: user.name }, ws_data);
             }
             else {
                 ws_data = Object.assign({}, { method: data.method, path: data.path, room_name }, ws_data);
             }
 
             this.rooms[room_name].users.forEach(function each(client) {
-                if ((all || client.websocket.getID() !== socket_id) && client.websocket.readyState === WebSocket.OPEN) {
+                if ((all || client.websocket !== socket) && client.websocket.readyState === WebSocket.OPEN) {
                     client.websocket.send(ws_data);
                     iCount++;
                 }
