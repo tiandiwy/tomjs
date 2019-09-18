@@ -58,3 +58,32 @@ exports.toBool = (val) => {
     } else if (val === undefined) { return undefined; }
     return val ? true : false;
 }
+
+exports.getClassName = (obj) => {
+    if (obj && obj.constructor && obj.constructor.toString()) {
+        if (obj.constructor.name) {
+            return obj.constructor.name;
+        }
+        let str = obj.constructor.toString();
+        let arr;
+        if (str.charAt(0) == '[') {
+            arr = str.match(/\w+\s∗(\w+)\w+\s∗(\w+)/);
+        } else {
+            arr = str.match(/function\s*(\w+)/);
+        }
+        if (arr && arr.length == 2) {
+            return arr[1];
+        }
+    }
+    return undefined;
+}
+
+exports.getClassFuncName = function (regx = /\)[\w\W]*?at ([\w.]+) \(/g) {
+    let callerName;
+    try { throw new Error(); }
+    catch (e) {
+        let m = regx.exec(e.stack);
+        callerName = m[1] || m[2];
+    }
+    return callerName;
+};

@@ -1,5 +1,5 @@
 const require2 = require('tomjs/handlers/require2');
-const { isObject, isArray, isClass, isFunction, isString } = require2('tomjs/handlers/base_tools');
+const { isObject, isArray, isClass, isFunction, isString, getClassFuncName } = require2('tomjs/handlers/base_tools');
 const auth_cfg = require2('tomjs/configs')().auth;
 const streams_cfg = require2('tomjs/configs')().streams;
 const StreamsError = require2('tomjs/error/streams_error');
@@ -9,23 +9,13 @@ exports.isArray = isArray;
 exports.isClass = isClass;
 exports.isFunction = isFunction;
 exports.isString = isString;
+exports.getClassFuncName = getClassFuncName;
 
 exports.getUserIDByCTX = (ctx) => {
     let user_id = undefined;
     try { user_id = ctx.state[auth_cfg.jwt_key][auth_cfg.jwt_key_id]; }
     catch (e) { user_id = undefined; }
     return user_id;
-};
-
-//split 如果需要将原函数名中的.字符换成其他字符，请插入相应字符
-exports.getClassFuncName = function (regx = /\)[\w\W]*?at ([\w.]+) \(/g) {
-    let callerName;
-    try { throw new Error(); }
-    catch (e) {
-        let m = regx.exec(e.stack);
-        callerName = m[1] || m[2];
-    }
-    return callerName;
 };
 
 exports.getStreamType = function getStreamType(type) {

@@ -1,10 +1,14 @@
 const require2 = require('tomjs/handlers/require2');
+const Events = require2('tomjs/handlers/events');
 const authorize_fn = require2('tomjs/handlers/authorize');
 const auth_cfg = require2('tomjs/configs')().auth;
+const { getClassName } = require2('tomjs/handlers/base_tools');
 
 class BaseController {
-    constructor() {
+    constructor(EventName) {
         this.authorize = authorize_fn;
+        if (EventName === undefined) { EventName = getClassName(this); }
+        this.emitter = Events.getEventEmitter(EventName);
     }
 
     isMyId(ctx, id) {
