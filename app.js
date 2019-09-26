@@ -54,8 +54,10 @@ async function startRun() {
             port: SystemConfig.server_https_port
         }));
     }
-    app.use(access_control_allow())
-        .use(koaLogger());
+    app.use(access_control_allow());
+    if(configs.log.open_koa_logger){
+        app.use(koaLogger());
+    }
     //.use(mount(configs.static.target_path, KoaStatic(configs.static.source_path, configs.static.options))) // Static resource
     const subdomain_static = new Subdomain();
     app.subdomainOffset = configs.subdomain.subdomain_offset;
@@ -94,17 +96,6 @@ async function startRun() {
     }
     app.use(subdomain.routes());
     app.use(ErrorRouter());
-
-    if (SystemConfig.NODE_ENV === 'development') { // logger
-        app.use((ctx, next) => {
-            const start = new Date();
-            return next()
-                .then(() => {
-                    const ms = new Date() - start;
-                    console.log(`${ctx.method} ${ctx.url} - ${ms}ms`);
-                })
-        })
-    }
 
     app.on("error", async (error, ctx) => { //捕获异常记录错误日志        
         emitter.emit('error', { ctx, error });
