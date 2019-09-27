@@ -2,8 +2,7 @@ const require2 = require('tomjs/handlers/require2');//可以开始使用require2
 const app_dir = require2('tomjs/handlers/dir')();
 const path = require2('path');
 const Subdomain = require2('koa-subdomain');
-const build_auth_jwt = require2('tomjs/auth/auth_jwt');
-const auth_jwt = build_auth_jwt('websocket');
+const auth_jwt = require2('tomjs/auth/auth_jwt');
 const auth_jwt_check = require2('tomjs/auth/auth_jwt_check');
 const auth_user = require2('tomjs/middleware/auth_user');
 const setupLang = require2('tomjs/middleware/setuplang');
@@ -35,10 +34,28 @@ async function initWS(server_ws, isWSS) {
         }
         return next();
     });
-    ws.use(auth_jwt);
-    if (configs.auth.jwt_auth_all_path) {
-        ws.use(auth_jwt_check('websocket'));
+    
+    const subdomain_jwt = new Subdomain();
+    const subdomain_jwt_check = new Subdomain();
+    for (let idx in configs.subdomain.maps) {
+        if (isObject(configs.subdomain.maps[idx].jwt)) {
+            let jwt = configs.subdomain.maps[idx].jwt;
+            if (jwt.work_path) {
+                subdomain_jwt.use(idx, mount(jwt.work_path, auth_jwt(idx, 'websocket')));
+                if (jwt.auth_all_path) {
+                    subdomain_jwt_check.use(idx, mount(jwt.work_path, auth_jwt_check(idx, 'websocket')));
+                }
+            } else {
+                subdomain_jwt.use(idx, auth_jwt(idx, 'websocket'));
+                if (jwt.auth_all_path) {
+                    subdomain_jwt_check.use(idx, auth_jwt_check(idx, 'websocket'));
+                }
+            }
+        }
     }
+    ws.use(subdomain_jwt.routes());
+    ws.use(subdomain_jwt_check.routes());
+    
     ws.use(auth_user);
     ws.use(session({ key: configs.session.session_key, store: new Store() }));
     ws.use(setupLang);

@@ -15,7 +15,7 @@ function jwt2() {
     return middleware;
 };
 
-module.exports = (type = 'web') => {
-    return jwt2().unless(configs.auth_unless[type]);
+module.exports = (subdomain, type = 'web') => {
+    return jwt2().unless(configs.subdomain.maps[subdomain].jwt.unless[type]);
 }
 

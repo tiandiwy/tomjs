@@ -5,7 +5,7 @@ const path = require2('path');
 const appdir = require2('tomjs/handlers/dir')();
 const { isArray, isObject } = require2('tomjs/handlers/tools');
 const auth_cfg = require2('tomjs/configs')().auth;
-const auth_unless = require2('tomjs/configs')().auth_unless;
+const subdomain_cfg = require2('tomjs/configs')().subdomain;
 const build_token = require2('tomjs/handlers/build_token');
 const getTime = require2('tomjs/handlers/gettimes');
 const log4js = require2('tomjs/handlers/log4js');
@@ -25,7 +25,7 @@ let opt = {
     key: auth_cfg.jwt_key,
     tokenKey: auth_cfg.jwt_tokenKey,
     cookie: auth_cfg.jwt_cookie,
-    passthrough: auth_cfg.jwt_auth_all_path,
+    passthrough: false,
     getToken: (ctx) => {
         if (isObject(ctx.websocket)) {
             if (ctx.query && ctx.query.Authorization) {
@@ -95,6 +95,7 @@ let opt = {
         return re;
     },
 };
+
 if (typeof (auth_cfg.jwt_audience) == "string" || isArray(auth_cfg.jwt_audience)) {
     opt['audience'] = auth_cfg.jwt_audience;
 }
@@ -102,10 +103,16 @@ if (typeof (auth_cfg.jwt_issuer) == "string" || isArray(auth_cfg.jwt_issuer)) {
     opt['issuer'] = auth_cfg.jwt_issuer;
 }
 
-module.exports = (type = 'web') => {
-    if (auth_cfg.jwt_auth_all_path) {
-        return koa_jwt(opt);
+module.exports = (subdomain, type = 'web') => {
+    let new_opt = Object.assign({}, opt);
+    new_opt.passthrough = false;
+    try {
+        new_opt.passthrough = subdomain_cfg.maps[subdomain].jwt.auth_all_path ? true : false;
+    }
+    catch (error) { new_opt.passthrough = false; }
+    if (subdomain_cfg.maps[subdomain].jwt.auth_all_path) {
+        return koa_jwt(new_opt);
     } else {
-        return koa_jwt(opt).unless(auth_unless[type]);
+        return koa_jwt(new_opt).unless(subdomain_cfg.maps[subdomain].jwt.unless[type]);
     }
 };

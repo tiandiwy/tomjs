@@ -13,7 +13,7 @@ const locale = require2('koa-locale');
 const session = require2("tomjs-koa-session2");
 const mount = require2('koa-mount');
 const Store = require2("tomjs/session/cahce_store");
-const build_auth_jwt = require2('tomjs/auth/auth_jwt');
+const auth_jwt = require2('tomjs/auth/auth_jwt');
 const auth_jwt_check = require2('tomjs/auth/auth_jwt_check');
 const auth_user = require2('tomjs/middleware/auth_user');
 const response_formatter = require2('tomjs/middleware/response-formatter');
@@ -30,8 +30,6 @@ const Events = require2('tomjs/handlers/events');
 if (configs.streams.boot_run_consumers) {
     require2('tomjs/handlers/run_consumer');
 }
-
-const auth_jwt = build_auth_jwt('web');
 
 //https
 const https = require('https');
@@ -55,12 +53,12 @@ async function startRun() {
         }));
     }
     app.use(access_control_allow());
-    if(configs.log.open_koa_logger){
+    if (configs.log.open_koa_logger) {
         app.use(koaLogger());
     }
     //.use(mount(configs.static.target_path, KoaStatic(configs.static.source_path, configs.static.options))) // Static resource
-    const subdomain_static = new Subdomain();
     app.subdomainOffset = configs.subdomain.subdomain_offset;
+    const subdomain_static = new Subdomain();
     for (let idx in configs.subdomain.maps) {
         if (isObject(configs.subdomain.maps[idx].static)) {
             let static = configs.subdomain.maps[idx].static;
@@ -71,17 +69,28 @@ async function startRun() {
     app.use(render)
         .use(response_formatter())
         .use(options());
-    if (configs.auth.jwt_work_path) {
-        app.use(mount(configs.auth.jwt_work_path, auth_jwt));
-        if (configs.auth.jwt_auth_all_path) {
-            app.use(mount(configs.auth.jwt_work_path, auth_jwt_check('web')));
-        }
-    } else {
-        app.use(auth_jwt);
-        if (configs.auth.jwt_auth_all_path) {
-            app.use(auth_jwt_check('web'));
+
+    const subdomain_jwt = new Subdomain();
+    const subdomain_jwt_check = new Subdomain();
+    for (let idx in configs.subdomain.maps) {
+        if (isObject(configs.subdomain.maps[idx].jwt)) {
+            let jwt = configs.subdomain.maps[idx].jwt;
+            if (jwt.work_path) {
+                subdomain_jwt.use(idx, mount(jwt.work_path, auth_jwt(idx, 'web')));
+                if (jwt.auth_all_path) {
+                    subdomain_jwt_check.use(idx, mount(jwt.work_path, auth_jwt_check(idx, 'web')));
+                }
+            } else {
+                subdomain_jwt.use(idx, auth_jwt(idx, 'web'));
+                if (jwt.auth_all_path) {
+                    subdomain_jwt_check.use(idx, auth_jwt_check(idx, 'web'));
+                }
+            }
         }
     }
+    app.use(subdomain_jwt.routes());
+    app.use(subdomain_jwt_check.routes());
+
     app.use(auth_user)
         .use(session({ key: configs.session.session_key, store: new Store() }))
         .use(setupLang)

@@ -3,6 +3,7 @@ const fs = require2('fs');
 const pluralize = require2('pluralize');
 const humps = require2('humps');
 const _ = require2('lodash');
+const system_cfg = require2('tomjs/configs')().system;
 const { isObject, isArray, isClass, isFunction, isString, arrDelete, arrAdd, toBool, getClassName, getClassFuncName } = require2('tomjs/handlers/base_tools');
 exports.isObject = isObject;
 exports.isArray = isArray;
@@ -267,4 +268,34 @@ exports.valuesHideFields = function (fileds, values) {
         }
     }
     return values;
+}
+
+//getUrlDomain 如果为false，如果服务器域名为 localhost 并且端口号为80 443 就会返回
+//如果 defUrlDomain 有值 并为 string: 表示localhost 以 http:// 或 https:// 开头就是完全替换 没有就表示只替换域名部分（只替换域名部分总是生效）
+exports.getUrlDomain = function (defUrlDomain) {
+    let str_port = '';
+    if (system_cfg.server_url_type.trimLeft().toLowerCase().startsWith('https') && (system_cfg.server_https_port != 443)) {
+        str_port = ":" + system_cfg.server_https_port;
+    }
+    if (system_cfg.server_url_type.trimLeft().toLowerCase().startsWith('http') && (system_cfg.server_http_port != 80)) {
+        str_port = ":" + system_cfg.server_http_port;
+    }
+    let server_host = system_cfg.server_host;
+    let url = system_cfg.server_url_type + system_cfg.server_host;
+    if (isString(defUrlDomain)) {
+        if (defUrlDomain.trimLeft().toLowerCase().startsWith('https://') || defUrlDomain.trimLeft().toLowerCase().startsWith('http://')) {
+            url = defUrlDomain;
+        }
+        else{
+            url = system_cfg.server_url_type + defUrlDomain;
+            server_host = defUrlDomain;
+        }
+    }
+    else if (defUrlDomain === false) {
+        url = "";
+    }
+    if (str_port.length > 0 || (server_host.trim().toLowerCase() != 'localhost')) {
+        url = system_cfg.server_url_type + server_host + str_port;
+    }
+    return url;
 }
