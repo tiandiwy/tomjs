@@ -1,10 +1,14 @@
 const require2 = require('tomjs/handlers/require2');
 const Observable = require2('tomjs/handlers/object-observer');
 
+const models_cfg = require2('tomjs/configs')().models;
+const { isObject, camelize, decamelize, isArray, select_fields, toBool, } = require2('tomjs/handlers/tools');
 const mongoose = require2('mongoose');
-mongoose.set('useNewUrlParser', true);
-mongoose.set('useFindAndModify', false);
-mongoose.set('useCreateIndex', true);
+if (isObject(models_cfg.mongoose_set)) {
+    for (const key in models_cfg.mongoose_set) {
+        mongoose.set(key, models_cfg.mongoose_set[key]);
+    }
+}
 
 const mongoose_delete = require2('mongoose-delete');
 const mongooseHidden = require2('mongoose-hidden')()
@@ -17,9 +21,7 @@ const update_assign = require2('tomjs/models/mongoose_middleware/update_assign')
 const support_sequelize = require2('tomjs/models/mongoose_middleware/support_sequelize');
 const deepPopulate = require2('tomjs/models/mongoose_middleware/deep_populate')(mongoose);
 const pagination = require2('tomjs/models/mongoose_middleware/pagination')(mongoose);
-const { isObject, camelize, decamelize, isArray, select_fields, toBool, } = require2('tomjs/handlers/tools');
 const auth_cfg = require2('tomjs/configs')().auth;
-const models_cfg = require2('tomjs/configs')().models;
 const Op = require2('tomjs/models/op')('mongodb');
 const LoadClassSync = require2('tomjs/handlers/load_class_sync');
 const system_id = "_id";
@@ -160,11 +162,10 @@ class MongooseModel {
                 else {
                     data = doc;
                 }
+                                
                 for (let key in data) {
-                    if (this[key]) {
-                        this[key] = data[key];
-                    }
-                    else { delete data[key]; }
+                    try{this[key] = data[key];}
+                    catch(e) { delete data[key]; }
                 }
                 return data;
             };
@@ -323,8 +324,7 @@ class MongooseModel {
             throw new MongooseError("hasMany field_name is empty");
         }
         options.justOne = false;
-        if(!options['foreignField'])
-        {
+        if (!options['foreignField']) {
             let field = this.collection;
             if (field === undefined) {
                 field = decamelize(this.constructor.name, ["model"], false);
