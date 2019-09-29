@@ -22,7 +22,10 @@ class BaseRegister extends BaseUser {
             if (ctx.request.body.language === undefined) {
                 ctx.request.body.language = ctx.lang;
             }
+            let old_is_guard = this.users.is_guard;
+            this.users.is_guard=false;
             user = await this.users.create(ctx.request.body);
+            this.users.is_guard = old_is_guard;
         } catch (e) {
             throw new BaseApiError(BaseApiError.DB_ERROR, { message: e.message });
         }
