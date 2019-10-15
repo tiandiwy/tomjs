@@ -162,10 +162,10 @@ class MongooseModel {
                 else {
                     data = doc;
                 }
-                                
+
                 for (let key in data) {
-                    try{this[key] = data[key];}
-                    catch(e) { delete data[key]; }
+                    try { this[key] = data[key]; }
+                    catch (e) { delete data[key]; }
                 }
                 return data;
             };
@@ -267,12 +267,11 @@ class MongooseModel {
     buildRelationshipsVirtuals() {
         let _this = this;
         let virtual_field;
+        let hidden_info = {};
         for (let idx in this.relationshipsVirtuals) {
             this.BuildSchema.virtual(idx, this.relationshipsVirtuals[idx]);
             if (this._all_belongsToMany[idx]) {
-                let hidden_info = {};
                 hidden_info[idx] = 'hideJSON';
-                this.BuildSchema.plugin(mongooseHidden, { virtuals: hidden_info });
                 let belongsToMany = this._all_belongsToMany[idx];
                 virtual_field = this.BuildSchema.virtual(belongsToMany.fieldName);
                 virtual_field.get(function () {
@@ -296,6 +295,7 @@ class MongooseModel {
                 //virtual_field.set(function(val) {});//应该用不到 设置虚拟属性的值，可以直接对象其提供对象即可。
             }
         }
+        this.BuildSchema.plugin(mongooseHidden, { virtuals: hidden_info });
     }
 
     baseHas(field_name = "", { ref, localField, foreignField, justOne, match, select, options } = {}) {
