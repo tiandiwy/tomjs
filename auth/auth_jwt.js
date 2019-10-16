@@ -60,6 +60,13 @@ let opt = {
                 let user = await users.findById(decodedToken[auth_cfg.jwt_key_id]);
                 if (user !== null) {
                     re = (parseInt(user[auth_cfg.jwt_key_token_version], 10) != parseInt(decodedToken[auth_cfg.jwt_key_token_version], 10));
+                    if (!re) {
+                        if (!isObject(ctx.auth)) {
+                            ctx.auth = {};
+                            ctx.auth.ID = decodedToken[auth_cfg.jwt_key_id];
+                            ctx.auth.USER = user;
+                        }
+                    }
                 } else { re = true; }
             } catch (e) { re = true; }
         }

@@ -59,7 +59,7 @@ let authInfo = {
     forgotpassword_mobile_field: auth_cfg.forgotpassword_mobile_field,
 };
 
-class BaseUser extends BaseController{
+class BaseUser extends BaseController {
     constructor() {
         super();
         this.users = UserModel.Model();
@@ -73,23 +73,29 @@ class BaseUser extends BaseController{
         user_token_obj[auth_cfg.jwt_key_token_version] = user[auth_cfg.jwt_key_token_version];
 
         let user_obj = undefined
-        if (typeof(jwt_payload) == "function") {
+        if (typeof (jwt_payload) == "function") {
             user_obj = await jwt_payload(ctx, user, long);
         }
         if (isObject(user_obj)) {
             Object.assign(user_token_obj, user_obj);
         }
-        if (typeof(user.language) && (user.language.length > 0)) { ctx.session[session_cfg.language_key] = user.language; }
+        if (typeof (user.language) && (user.language.length > 0)) { ctx.session[session_cfg.language_key] = user.language; }
         return build_token(ctx, user_token_obj, long);
     }
 
-    ReToken(ctx, long) {
+    async ReToken(ctx, long) {
         if (!isObject(ctx.state)) {
             throw new BaseApiError(BaseApiError.JWT_ERROR, 'state error');
         }
         if (!isObject(ctx.state[auth_cfg.jwt_key])) {
             throw new BaseApiError(BaseApiError.JWT_ERROR, 'state.' + auth_cfg.jwt_key + ' error');
         }
+
+        let user = await ctx.auth.user();
+        if (parseInt(user[auth_cfg.jwt_key_token_version], 10) != parseInt(ctx.state[auth_cfg.jwt_key][auth_cfg.jwt_key_token_version], 10)) {
+            throw new BaseApiError(BaseApiError.JWT_ERROR, 'old token version Invalid', { now: parseInt(user[auth_cfg.jwt_key_token_version], 10), old: parseInt(ctx.state[auth_cfg.jwt_key][auth_cfg.jwt_key_token_version], 10) });
+        }
+
         const dels = ['iat', 'exp', 'iss', 'nbf', 'aud', 'sub']; //需要排除的属性
         let user_token_obj = Object.assign({}, ctx.state[auth_cfg.jwt_key]);
         let len = dels.length;
@@ -97,12 +103,12 @@ class BaseUser extends BaseController{
             if (user_token_obj[dels[i]]) { delete user_token_obj[dels[i]]; }
         }
         let token = build_token(ctx, user_token_obj, long);
-        this.emitter.emit('retoken', {ctx, token_obj:user_token_obj, token});
+        this.emitter.emit('retoken', { ctx, token_obj: user_token_obj, token });
         return token;
     }
 
-    retoken(ctx, long) {
-        let token = this.ReToken(ctx, long);
+    async retoken(ctx, long) {
+        let token = await this.ReToken(ctx, long);
         ctx.body = {
             userid: ctx.auth.id(),
             token: token,
@@ -136,7 +142,7 @@ class BaseUser extends BaseController{
         ctx.body = authInfo;
     }
 
-    decodeToken(token){
+    decodeToken(token) {
         return decode(token);
     }
 

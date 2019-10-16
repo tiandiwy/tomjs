@@ -5,9 +5,11 @@ const configs = require2('tomjs/configs')();
 const UserModel = require2(configs.auth.auth_model);
 
 module.exports = async function (ctx, next) {
-    ctx.auth = {};
-    ctx.auth.ID = undefined;
-    ctx.auth.USER = undefined;
+    if (!isObject(ctx.auth)) {
+        ctx.auth = {};
+        ctx.auth.ID = undefined;
+        ctx.auth.USER = undefined;
+    }
 
     ctx.auth.id = () => {
         if (ctx.auth.ID) { return ctx.auth.ID; }
@@ -17,7 +19,7 @@ module.exports = async function (ctx, next) {
         }
         return undefined;
     };
-    ctx.auth.ID = ctx.auth.id();
+    if (!ctx.auth.ID) { ctx.auth.ID = ctx.auth.id(); }
 
     ctx.auth.user = async () => {
         let users = UserModel.Model();
@@ -31,6 +33,5 @@ module.exports = async function (ctx, next) {
         ctx.auth.USER = undefined;
         return ctx.auth.USER;
     };
-    await ctx.auth.user();
     return next();
 };
