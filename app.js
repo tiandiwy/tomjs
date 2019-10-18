@@ -13,8 +13,6 @@ const locale = require2('koa-locale');
 const session = require2("tomjs-koa-session2");
 const mount = require2('koa-mount');
 const Store = require2("tomjs/session/cahce_store");
-const auth_jwt = require2('tomjs/auth/auth_jwt');
-const auth_jwt_check = require2('tomjs/auth/auth_jwt_check');
 const auth_user = require2('tomjs/middleware/auth_user');
 const response_formatter = require2('tomjs/middleware/response-formatter');
 const render = require2('tomjs/middleware/render');
@@ -70,29 +68,8 @@ async function startRun() {
         .use(response_formatter())
         .use(options());
 
-    const subdomain_jwt = new Subdomain();
-    const subdomain_jwt_check = new Subdomain();
-    for (let idx in configs.subdomain.maps) {
-        if (isObject(configs.subdomain.maps[idx].jwt)) {
-            let jwt = configs.subdomain.maps[idx].jwt;
-            if (jwt.work_path) {
-                subdomain_jwt.use(idx, mount(jwt.work_path, auth_jwt(idx, 'web')));
-                if (jwt.auth_all_path) {
-                    subdomain_jwt_check.use(idx, mount(jwt.work_path, auth_jwt_check(idx, 'web')));
-                }
-            } else {
-                subdomain_jwt.use(idx, auth_jwt(idx, 'web'));
-                if (jwt.auth_all_path) {
-                    subdomain_jwt_check.use(idx, auth_jwt_check(idx, 'web'));
-                }
-            }
-        }
-    }
-    app.use(subdomain_jwt.routes());
-    app.use(subdomain_jwt_check.routes());
-
-    app.use(auth_user)
-        .use(session({ key: configs.session.session_key, store: new Store() }))
+    app.use(auth_user);
+    app.use(session({ key: configs.session.session_key, store: new Store() }))
         .use(setupLang)
         .use(KoaBody(configs.body)); // Processing request
     // .use(PluginLoader(SystemConfig.System_plugin_path))

@@ -5,7 +5,6 @@ const path = require2('path');
 const appdir = require2('tomjs/handlers/dir')();
 const { isArray, isObject } = require2('tomjs/handlers/tools');
 const auth_cfg = require2('tomjs/configs')().auth;
-const subdomain_cfg = require2('tomjs/configs')().subdomain;
 const build_token = require2('tomjs/handlers/build_token');
 const getTime = require2('tomjs/handlers/gettimes');
 const log4js = require2('tomjs/handlers/log4js');
@@ -51,6 +50,13 @@ let opt = {
         //写入token相关信息
         ctx.state[auth_cfg.jwt_key] = decodedToken;
         ctx.state[auth_cfg.jwt_tokenkey] = token;
+        if (!isObject(ctx.auth)) {
+            ctx.auth = {};
+            ctx.auth.ID = decodedToken[auth_cfg.jwt_key_id];
+        }
+        else {
+            ctx.auth.ID = decodedToken[auth_cfg.jwt_key_id];
+        }
 
         let re = false;
         if (auth_cfg.jwt_key_check_token_version) {
@@ -61,9 +67,7 @@ let opt = {
                 if (user !== null) {
                     re = (parseInt(user[auth_cfg.jwt_key_token_version], 10) != parseInt(decodedToken[auth_cfg.jwt_key_token_version], 10));
                     if (!re) {
-                        if (!isObject(ctx.auth)) {
-                            ctx.auth = {};
-                            ctx.auth.ID = decodedToken[auth_cfg.jwt_key_id];
+                        if (isObject(ctx.auth)) {
                             ctx.auth.USER = user;
                         }
                     }
@@ -110,16 +114,8 @@ if (typeof (auth_cfg.jwt_issuer) == "string" || isArray(auth_cfg.jwt_issuer)) {
     opt['issuer'] = auth_cfg.jwt_issuer;
 }
 
-module.exports = (subdomain, type = 'web') => {
+module.exports = (auth_all_path = false) => {
     let new_opt = Object.assign({}, opt);
-    new_opt.passthrough = false;
-    try {
-        new_opt.passthrough = subdomain_cfg.maps[subdomain].jwt.auth_all_path ? true : false;
-    }
-    catch (error) { new_opt.passthrough = false; }
-    if (subdomain_cfg.maps[subdomain].jwt.auth_all_path) {
-        return koa_jwt(new_opt);
-    } else {
-        return koa_jwt(new_opt).unless(subdomain_cfg.maps[subdomain].jwt.unless[type]);
-    }
+    new_opt.passthrough = auth_all_path;
+    return koa_jwt(new_opt);
 };

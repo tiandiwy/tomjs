@@ -13,7 +13,7 @@ exports.getDBObjByID = async (mode, id, pql = undefined) => {
             throw error;
         }
         else{
-            throw new BaseApiError(BaseApiError.DB_ERROR, { id: id, message: e.message });
+            throw new BaseApiError(BaseApiError.DB_ERROR, { id: id, message: error.message });
         }
         
     }

@@ -35,27 +35,6 @@ async function initWS(server_ws, isWSS) {
         return next();
     });
     
-    const subdomain_jwt = new Subdomain();
-    const subdomain_jwt_check = new Subdomain();
-    for (let idx in configs.subdomain.maps) {
-        if (isObject(configs.subdomain.maps[idx].jwt)) {
-            let jwt = configs.subdomain.maps[idx].jwt;
-            if (jwt.work_path) {
-                subdomain_jwt.use(idx, mount(jwt.work_path, auth_jwt(idx, 'websocket')));
-                if (jwt.auth_all_path) {
-                    subdomain_jwt_check.use(idx, mount(jwt.work_path, auth_jwt_check(idx, 'websocket')));
-                }
-            } else {
-                subdomain_jwt.use(idx, auth_jwt(idx, 'websocket'));
-                if (jwt.auth_all_path) {
-                    subdomain_jwt_check.use(idx, auth_jwt_check(idx, 'websocket'));
-                }
-            }
-        }
-    }
-    ws.use(subdomain_jwt.routes());
-    ws.use(subdomain_jwt_check.routes());
-    
     ws.use(auth_user);
     ws.use(session({ key: configs.session.session_key, store: new Store() }));
     ws.use(setupLang);
