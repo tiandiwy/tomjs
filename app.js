@@ -20,7 +20,8 @@ const options = require2('tomjs/middleware/options');
 const access_control_allow = require2('tomjs/middleware/access_control_allow');
 const ErrorRouter = require2('tomjs/router/error-router');
 const setupLang = require2('tomjs/middleware/setuplang');
-const { clone, isObject } = require2('tomjs/handlers/base_tools');
+const { clone, isObject, isString } = require2('tomjs/handlers/base_tools');
+const proxy = require('koa-proxy');
 
 const app_init = require(path.join(app_dir, './init/web'));//提供用户第一时间初始化app使用
 
@@ -56,6 +57,13 @@ async function startRun() {
     }
     //.use(mount(configs.static.target_path, KoaStatic(configs.static.source_path, configs.static.options))) // Static resource
     app.subdomainOffset = configs.subdomain.subdomain_offset;
+    const subdomain_proxy = new Subdomain();
+    for (let idx in configs.subdomain.maps) {
+        if (isString(configs.subdomain.maps[idx].proxy)) {
+            subdomain_proxy.use(idx, proxy({ host: configs.subdomain.maps[idx].proxy, jar: true }));
+        }
+    }
+    app.use(subdomain_proxy.routes());
     const subdomain_static = new Subdomain();
     for (let idx in configs.subdomain.maps) {
         if (isObject(configs.subdomain.maps[idx].static)) {
