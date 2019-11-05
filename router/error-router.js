@@ -17,7 +17,7 @@ module.exports = function () {
           let reg = new RegExp(hostname_pattern);
           isAPI = reg.test(ctx.hostname);
         }
-        if (isAPI && path_pattern) {
+        if ((isAPI||hostname_pattern===undefined) && path_pattern) {
           let reg = new RegExp(path_pattern);
           isAPI = reg.test(ctx.originalUrl);
         }
