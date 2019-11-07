@@ -487,6 +487,11 @@ module.exports = function (inmongoose) {
     }
     async function aggregateEndDeepPopulate(values) {
         if (this._deepPopulatePaths) {
+            if (isObject(this._deepPopulatePaths.paths)) {
+                if (this._deepPopulatePaths.paths._id === undefined) {
+                    this._deepPopulatePaths.paths._id = 1;
+                }
+            }
             if (isObject(values)) {
                 await aggregateEndDeepPopulateOne(this, values);
             }else if (isArray(values)) {
