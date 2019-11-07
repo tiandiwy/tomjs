@@ -4,7 +4,7 @@ const { join, extname } = require2('path');
 const pluralize = require2('pluralize');
 const _ = require2('lodash');
 const appDir = require2('tomjs/handlers/dir')();
-const { isArray, isObject, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
+const { isArray, isString, isObject, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
 const jsonTemplate = require2('tomjs/handlers/json_templater');
 const LoadClass = require2('tomjs/handlers/load_class');
 const models_cfg = require2('tomjs/configs')().models;
@@ -70,7 +70,8 @@ module.exports = function (inmongoose) {
         else {
             options.locals = Object.assign({}, options.locals, _def.locals);
         }
-
+        if (options.aggregate_id === undefined) { options.aggregate_id = _def.aggregate_id === undefined ? 'id' : _def.aggregate_id; }
+        return options;
     }
 
     async function BuildPaths(conn, super_schema, schema, path_name, paths, options, all = true, deep = 0) {
@@ -296,6 +297,29 @@ module.exports = function (inmongoose) {
         this.mongoose.Query.prototype.pql = this.mongoose.Query.prototype.deepPopulate;
     };
 
+    function aggregateRunDeepPopulate(next) {
+        let pipeline_len = this._pipeline.length;
+        let paths, options;
+        let have_pql = false;
+
+        for (let i = pipeline_len - 1; i > 0; i--) {
+            if (this._pipeline[i].$pql) {
+                paths = this._pipeline[i].$pql;
+                have_pql = true;
+                this._pipeline.splice(i, 1);
+                continue;
+            }
+            if (this._pipeline[i].$pql_options) {
+                options = this._pipeline[i].$pql_options;
+                this._pipeline.splice(i, 1);
+            }
+        }
+        if (have_pql !== false) {
+            this._deepPopulatePaths = { paths, options };
+        }
+        if (next) { return next(); }
+    }
+
     async function runDeepPopulate(next) {
         let RE = undefined;
         if (this._deepPopulatePaths && this._deepPopulatePaths_End === undefined) {
@@ -455,12 +479,33 @@ module.exports = function (inmongoose) {
         }
     }
 
+    async function aggregateEndDeepPopulateOne($this, doc) {
+        let options = DefaultOptions($this._model.schema._defaultDeepPopulateOptions, $this._deepPopulatePaths.options);
+        let model = $this._model;
+        let obj = await model.findById({ _id: doc[options.aggregate_id] }).pql($this._deepPopulatePaths.paths, $this._deepPopulatePaths.options);
+        Object.assign(doc, obj.getValues());
+    }
+    async function aggregateEndDeepPopulate(values) {
+        if (this._deepPopulatePaths) {
+            if (isObject(values)) {
+                await aggregateEndDeepPopulateOne(this, values);
+            }else if (isArray(values)) {
+                let len = values.length;
+                for (let i = 0; i < len; i++) {
+                    await aggregateEndDeepPopulateOne(this, values[i]);
+                }
+            }
+        }
+    }
+
     function deepPopulatePlugin(schema, defaultOptions) {
         schema._defaultDeepPopulateOptions = defaultOptions;
         schema.pre('findOne', runDeepPopulate)
             .pre('find', runDeepPopulate)
+            .pre('aggregate', aggregateRunDeepPopulate)
             .post('findOne', endDeepPopulate)
-            .post('find', endDeepPopulate);
+            .post('find', endDeepPopulate)
+            .post('aggregate', aggregateEndDeepPopulate);
         schema.methods.deepPopulate = async function (paths, options = {}) { //查询后再填充            
             DefaultOptions(schema._defaultDeepPopulateOptions, options);
             this._deepPopulatePaths = { paths, options, all: false };
