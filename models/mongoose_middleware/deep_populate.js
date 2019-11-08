@@ -314,6 +314,16 @@ module.exports = function (inmongoose) {
                 this._pipeline.splice(i, 1);
             }
         }
+        pipeline_len = this._pipeline.length;
+        for (let i = pipeline_len - 1; i > 0; i--) {
+            if (this._pipeline[i].$group) {
+                let myoptions = Object.assign({}, options);
+                DefaultOptions(this._model.schema._defaultDeepPopulateOptions, myoptions);
+                if (this._pipeline[i].$group[myoptions.aggregate_id] === undefined) {
+                    this._pipeline[i].$group[myoptions.aggregate_id] = { $min: "$_id" };
+                }
+            }
+        }
         if (have_pql !== false) {
             this._deepPopulatePaths = { paths, options };
         }
@@ -482,7 +492,7 @@ module.exports = function (inmongoose) {
     async function aggregateEndDeepPopulateOne($this, doc) {
         let options = DefaultOptions($this._model.schema._defaultDeepPopulateOptions, $this._deepPopulatePaths.options);
         let model = $this._model;
-        let obj = await model.findById({ _id: doc[options.aggregate_id] }).pql($this._deepPopulatePaths.paths, $this._deepPopulatePaths.options);
+        let obj = await model.findById(doc[options.aggregate_id]).pql($this._deepPopulatePaths.paths, $this._deepPopulatePaths.options);
         Object.assign(doc, obj.getValues());
     }
     async function aggregateEndDeepPopulate(values) {
@@ -494,7 +504,7 @@ module.exports = function (inmongoose) {
             }
             if (isObject(values)) {
                 await aggregateEndDeepPopulateOne(this, values);
-            }else if (isArray(values)) {
+            } else if (isArray(values)) {
                 let len = values.length;
                 for (let i = 0; i < len; i++) {
                     await aggregateEndDeepPopulateOne(this, values[i]);
