@@ -59,6 +59,7 @@ class BaseLogin extends BaseUser {
         }
         let tokenInfo = this.decodeToken(ctx.state[auth_cfg.jwt_tokenkey]);
         ctx.body = {
+            name: user.name,
             userid: user.id,
             token: ctx.state[auth_cfg.jwt_tokenkey],
             exp: tokenInfo.exp,

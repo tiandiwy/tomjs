@@ -32,6 +32,7 @@ class BaseRegister extends BaseUser {
         let token = await this.BuildToken(ctx, user, expiresin_long);
         this.emitter.emit('register', {ctx, user, token});
         ctx.body = {
+            name: user.name,
             userid: user.id,
             token: token,
         };
