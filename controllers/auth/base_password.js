@@ -24,7 +24,10 @@ class BaseRegister extends BaseLogin {
         inc[auth_cfg.jwt_key_token_version] = 1;
         let update = { $inc: inc };
         update[this.field_password()] = await Password.hash(ctx.request.body.password);
-        try { await this.users.updateOne({ _id: user.id }, update); } catch (e) {
+        try {
+            await this.users.updateOne({ _id: user.id }, update);
+            user = await this.users.findById(user.id);
+        } catch (e) {
             throw new BaseApiError(BaseApiError.DB_ERROR, { message: e.message });
         }
         await this.BuildToken(ctx, user, ctx.state[auth_cfg.jwt_key][auth_cfg.jwt_key_exp_is_long]);
