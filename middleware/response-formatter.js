@@ -10,7 +10,7 @@ let emitter = Events.getEventEmitter('error');
  * 在app.use(router)之前调用 自动格式化输出
  */
 let response_formatter = (ctx) => {
-    if (ctx.response.NotFormat) { return; }
+    if (ctx.response.NotFormat || ctx.NotFormat) { return; }
     ctx.response.type = 'application/json';
     //如果有返回数据，将返回数据添加到data中
     if (ctx.status === 429) {
