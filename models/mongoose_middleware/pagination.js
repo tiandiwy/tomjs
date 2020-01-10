@@ -18,10 +18,21 @@ module.exports = function (mongoose) {
             let page = 0;
             if (isObject(page_or_ctx) && isObject(page_or_ctx[models_cfg.pagination.ctx_field]) && (models_cfg.pagination.pageindex in page_or_ctx[models_cfg.pagination.ctx_field])) {
                 page = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pageindex]);
-                if(!limit){limit = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pagesize]);} 
+                if (!limit) { limit = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pagesize]); }
             }
             else { page = parseInt(page_or_ctx); }
-            if(!limit || isNaN(limit) ){limit = 10;}
+            if (!limit || isNaN(limit)) {
+                limit = models_cfg.pagination.pagesize_default;
+                limit = isNaN(limit) ? 10 : limit;
+            }
+            let limit_min = models_cfg.pagination.pagesize_min;
+            if (limit_min && !isNaN(limit_min)) {
+                limit = limit < limit_min ? limit_min : limit;
+            }
+            let limit_max = models_cfg.pagination.pagesize_max;
+            if (limit_max && !isNaN(limit_max)) {
+                limit = limit >= limit_max ? limit_max : limit;
+            }
             page = isNaN(page) ? 0 : page;
             page = page < 1 ? 1 : page;
             let query = this;
