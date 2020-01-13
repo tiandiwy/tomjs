@@ -21,18 +21,19 @@ module.exports = function (mongoose) {
                 if (!limit) { limit = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pagesize]); }
             }
             else { page = parseInt(page_or_ctx); }
-            if (!limit || isNaN(limit)) {
+            if (isNaN(limit)) {
                 limit = models_cfg.pagination.pagesize_default;
                 limit = isNaN(limit) ? 10 : limit;
             }
             let limit_min = models_cfg.pagination.pagesize_min;
-            if (limit_min && !isNaN(limit_min)) {
+            if (!isNaN(limit_min)) {
                 limit = limit < limit_min ? limit_min : limit;
             }
             let limit_max = models_cfg.pagination.pagesize_max;
-            if (limit_max && !isNaN(limit_max)) {
+            if (!isNaN(limit_max)) {
                 limit = limit >= limit_max ? limit_max : limit;
             }
+            if (limit < 1) { limit = 1; }
             page = isNaN(page) ? 0 : page;
             page = page < 1 ? 1 : page;
             let query = this;
