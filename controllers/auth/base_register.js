@@ -36,6 +36,7 @@ class BaseRegister extends BaseUser {
             userid: user.id,
             token: token,
         };
+        return user;
     }
 }
 module.exports = BaseRegister;
