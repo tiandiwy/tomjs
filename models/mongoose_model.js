@@ -545,14 +545,18 @@ class MongooseModel {
             return old_create.apply(this, arguments);
         }
         let old_find = model_obj.find;
+        model_obj.find = function () {
+            return old_find.apply(this, arguments).where('undefined').ne(true);
+        }
         model_obj.findAll = function () {
-            return old_find.apply(this, arguments);
+            return model_obj.find.apply(this, arguments);
         }
         if (this.find_return_one) {
             model_obj.find = function () {
                 return model_obj.findOne.apply(this, arguments);
             }
         }
+        
         model_obj.create = function (doc, options, callback) {
             if (this.is_guard == true) {
                 let data = {};
