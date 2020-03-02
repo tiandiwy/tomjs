@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.1.82",
+  "version": "0.1.83",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {
@@ -71,7 +71,7 @@
     "tomjs-koa-better-ratelimit": "^2.1.5",
     "tomjs-koa-session2": "^1.0.1",
     "universal-dotenv": "^1.9.3",
-    "validatorjs_tom": "^0.1.0",
+    "validatorjs_tom": "^0.1.1",
     "vamtiger-regex-html-title": "0.0.5",
     "xregexp": "^4.2.4"
   }
