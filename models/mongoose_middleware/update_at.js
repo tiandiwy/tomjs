@@ -5,7 +5,7 @@ class update_at_middleware {
                 this.updatedAt = Date.now();
             });
             Schema.pre('update', function() {
-                this.updateMany({}, { $set: { updatedAt: new Date() } });
+                this.update({}, { $set: { updatedAt: new Date() } });
             });
         }
     }
