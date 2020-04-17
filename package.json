@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.1.87",
+  "version": "0.1.88",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {
@@ -23,7 +23,6 @@
     "cacheman": "^2.2.1",
     "cacheman-redis": "^2.1.0",
     "continuation-local-storage": "^3.2.1",
-    "eventemitter2": "^5.0.1",
     "file-exists": "^5.0.1",
     "humps": "^2.0.1",
     "ioredis": "^4.14.1",
@@ -49,7 +48,7 @@
     "lodash": "^4.17.15",
     "log4js": "^4.5.1",
     "mongoose": "^5.7.10",
-    "mongoose-delete": "^0.4.0",
+    "mongoose-delete": "^0.5.2",
     "mongoose-hidden": "^1.8.1",
     "mongoose-validator": "^2.1.0",
     "mysql2": "^1.7.0",
