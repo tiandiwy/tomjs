@@ -5,9 +5,8 @@ var mongoose = require('mongoose'),
 
 /**
  * This code is taken from official mongoose repository
- * https://github.com/Automattic/mongoose/blob/master/lib/query.js#L1996-L2018
+ * https://github.com/Automattic/mongoose/blob/master/lib/query.js#L3847-L3873
  */
-/* istanbul ignore next */
 function parseUpdateArguments (conditions, doc, options, callback) {
     if ('function' === typeof options) {
         // .update(conditions, doc, callback)
@@ -78,10 +77,11 @@ function createSchemaObject (typeKey, typeValue, options) {
 
 module.exports = function (schema, options) {
     options = options || {};
-    var indexFields = parseIndexFields(options)
+    var indexFields = parseIndexFields(options);
 
     var typeKey = schema.options.typeKey;
-
+    var mongooseMajorVersion = +mongoose.version[0]; // 4, 5...
+    var mainUpdateMethod = mongooseMajorVersion < 5 ? 'update' : 'updateMany';
     schema.add({ deleted: createSchemaObject(typeKey, Boolean, { default: false, index: indexFields.deleted }) });
 
     if (options.deletedAt === true) {
@@ -90,6 +90,11 @@ module.exports = function (schema, options) {
 
     if (options.deletedBy === true) {
         schema.add({ deletedBy: createSchemaObject(typeKey, options.deletedByType || Schema.Types.ObjectId, { index: indexFields.deletedBy }) });
+    }
+
+    var use$neOperator = true;
+    if (options.use$neOperator !== undefined && typeof options.use$neOperator === "boolean") {
+        use$neOperator = options.use$neOperator;
     }
 
     schema.pre('save', function (next) {
@@ -101,7 +106,7 @@ module.exports = function (schema, options) {
 
     if (options.overrideMethods) {
         var overrideItems = options.overrideMethods;
-        var overridableMethods = ['count', 'find', 'findOne', 'findOneAndUpdate', 'update'];
+        var overridableMethods = ['count', 'countDocuments', 'find', 'findOne', 'findOneAndUpdate', 'update', 'updateMany', 'aggregate'];
         var finalList = [];
 
         if ((typeof overrideItems === 'string' || overrideItems instanceof String) && overrideItems === 'all') {
@@ -120,46 +125,102 @@ module.exports = function (schema, options) {
             });
         }
 
+        if (finalList.indexOf('aggregate') > -1) {
+            schema.pre('aggregate', function() {
+                var firsMatchStr = JSON.stringify(this.pipeline()[0]);
+
+                if ( firsMatchStr !== '{"$match":{"deleted":{"$ne":false}}}' ) {
+                    if (firsMatchStr === '{"$match":{"showAllDocuments":"true"}}') {
+                        this.pipeline().shift();
+                    } else {
+                        this.pipeline().unshift({ $match: { deleted: { '$ne': true } } });
+                    }
+                }
+            });
+        }
+
         finalList.forEach(function(method) {
-            if (method === 'count' || method === 'find' || method === 'findOne') {
+            if (['count', 'countDocuments', 'find', 'findOne'].indexOf(method) > -1) {
+                var modelMethodName = method;
+
+                // countDocuments do not exist in Mongoose v4
+                /* istanbul ignore next */
+                if (mongooseMajorVersion < 5 && method === 'countDocuments' && typeof Model.countDocuments !== 'function') {
+                    modelMethodName = 'count';
+                }
+
                 schema.statics[method] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(true);
+                    if (use$neOperator) {
+                        return Model[modelMethodName].apply(this, arguments).where('deleted').ne(true);
+                    } else {
+                        return Model[modelMethodName].apply(this, arguments).where({deleted: false});
+                    }
                 };
                 schema.statics[method + 'Deleted'] = function () {
-                    return Model[method].apply(this, arguments).where('deleted').ne(false);
+                    if (use$neOperator) {
+                        return Model[modelMethodName].apply(this, arguments).where('deleted').ne(false);
+                    } else {
+                        return Model[modelMethodName].apply(this, arguments).where({deleted: true});
+                    }
                 };
                 schema.statics[method + 'WithDeleted'] = function () {
-                    return Model[method].apply(this, arguments);
+                    return Model[modelMethodName].apply(this, arguments);
                 };
             } else {
-                schema.statics[method] = function () {
-                    var args = parseUpdateArguments.apply(undefined, arguments);
+                if (method === 'aggregate') {
+                    schema.statics[method + 'Deleted'] = function () {
+                        var args = [];
+                        Array.prototype.push.apply(args, arguments);
+                        var match = { $match : { deleted : {'$ne': false } } };
+                        arguments.length ? args[0].unshift(match) : args.push([match]);
+                        return Model[method].apply(this, args);
+                    };
 
-                    args[0].deleted = {'$ne': true};
-                    let method2 = method=="update" ? "updateMany" : method;
-                    return Model[method2].apply(this, args);
-                };
+                    schema.statics[method + 'WithDeleted'] = function () {
+                        var args = [];
+                        Array.prototype.push.apply(args, arguments);
+                        var match = { $match : { showAllDocuments : 'true' } };
+                        arguments.length ? args[0].unshift(match) : args.push([match]);
+                        return Model[method].apply(this, args);
+                    };
+                } else {
+                    schema.statics[method] = function () {
+                        var args = parseUpdateArguments.apply(undefined, arguments);
 
-                schema.statics[method + 'Deleted'] = function () {
-                    var args = parseUpdateArguments.apply(undefined, arguments);
+                        if (use$neOperator) {
+                            args[0].deleted = {'$ne': true};
+                        } else {
+                            args[0].deleted = false;
+                        }
+                        let method2 = method=="update" ? "updateMany" : method;
+                        return Model[method2].apply(this, args);
+                    };
 
-                    args[0].deleted = {'$ne': false};
-                    let method2 = method=="update" ? "updateMany" : method;
-                    return Model[method2].apply(this, args);
-                };
+                    schema.statics[method + 'Deleted'] = function () {
+                        var args = parseUpdateArguments.apply(undefined, arguments);
 
-                schema.statics[method + 'WithDeleted'] = function () {
-                    let method2 = method=="update" ? "updateMany" : method;
-                    return Model[method2].apply(this, arguments);
-                };
+                        if (use$neOperator) {
+                            args[0].deleted = {'$ne': false};
+                        } else {
+                            args[0].deleted = true;
+                        }
+                        let method2 = method=="update" ? "updateMany" : method;
+                        return Model[method2].apply(this, args);
+                    };
+
+                    schema.statics[method + 'WithDeleted'] = function () {
+                        let method2 = method=="update" ? "updateMany" : method;
+                        return Model[method2].apply(this, arguments);
+                    };
+                }
             }
         });
     }
 
     schema.methods.delete = function (deletedBy, cb) {
         if (typeof deletedBy === 'function') {
-          cb = deletedBy
-          deletedBy = null
+          cb = deletedBy;
+          deletedBy = null;
         }
 
         this.deleted = true;
@@ -205,8 +266,21 @@ module.exports = function (schema, options) {
         if (this.updateWithDeleted) {
             return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
         } else {
-            return this.update(conditions, doc, { multi: true }, callback);
+            return this[mainUpdateMethod](conditions, doc, { multi: true }, callback);
         }
+    };
+
+    schema.statics.deleteById =  function (id, deletedBy, callback) {
+        if (arguments.length === 0 || typeof id === 'function') {
+            var msg = 'First argument is mandatory and must not be a function.';
+            throw new TypeError(msg);
+        }
+
+        var conditions = {
+            _id: id
+        };
+
+        return this.delete(conditions, deletedBy, callback);
     };
 
     schema.methods.restore = function (callback) {
@@ -231,7 +305,7 @@ module.exports = function (schema, options) {
         if (this.updateWithDeleted) {
             return this.updateWithDeleted(conditions, doc, { multi: true }, callback);
         } else {
-            return this.update(conditions, doc, { multi: true }, callback);
+            return this[mainUpdateMethod](conditions, doc, { multi: true }, callback);
         }
     };
 };
