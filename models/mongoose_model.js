@@ -10,7 +10,7 @@ if (isObject(models_cfg.mongoose_set)) {
     }
 }
 
-const mongoose_delete = require2('mongoose-delete');
+const mongoose_delete = require2('tomjs/models/mongoose_middleware/mongoose-delete');
 const mongooseHidden = require2('mongoose-hidden')()
 const pluralize = require2('pluralize');
 const humps = require2('humps');
@@ -556,22 +556,7 @@ class MongooseModel {
                 return model_obj.findOne.apply(this, arguments);
             }
         }
-
-        if (model_this.isSoftDeletes) {
-            model_obj.deleteOne = function () {
-                return model_obj.delete.apply(this, arguments);
-            }
-
-            model_obj.deleteMany = function () {
-                return model_obj.delete.apply(this, arguments);
-            }
-        }
-        else {
-            model_obj.deleteById = function (id) {
-                return model_obj.deleteOne.call(this, { _id: id });
-            }
-        }
-
+        
         model_obj.create = function (doc, options, callback) {
             if (this.is_guard == true) {
                 let data = {};
