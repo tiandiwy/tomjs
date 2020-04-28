@@ -19,22 +19,18 @@ class Events {
         let listener = undefined;
         let listenerIsClass = false;
         let filename = path.join(app_dir, './listeners/', file_name);
-        try {
-            let listener_class = require(filename);
-            listenerIsClass = isClass(listener_class);
-            if (listenerIsClass) {
-                listener = new listener_class(); //自动抛出出错，以便开发人员知道配置错误
-            }
-            else {
-                listener = listener_class;
-                if (func_names.length <= 0) {
-                    func_names = listener.name;
-                }
-            }
-        } catch (error) {
-            throw new ListenerError('Listener error by require file:' + filename);
+        let listener_class = require(filename);
+        listenerIsClass = isClass(listener_class);
+        if (listenerIsClass) {
+            listener = new listener_class(); //自动抛出出错，以便开发人员知道配置错误
         }
-        let all_fn_name_old = getObjAllFuncName(listener,"BaseListener");
+        else {
+            listener = listener_class;
+            if (func_names.length <= 0) {
+                func_names = listener.name;
+            }
+        }
+        let all_fn_name_old = getObjAllFuncName(listener, "BaseListener");
         let all_fn_name = {};
         let isOneFunc = false;
         if (func_names.length > 0) {
@@ -66,11 +62,11 @@ class Events {
                 }
             }
         }
-        else{
+        else {
             all_fn_name = all_fn_name_old;
         }
         if (isOneFunc) {
-            if(func_names.length<=0){func_names='*';}
+            if (func_names.length <= 0) { func_names = '*'; }
             emitter.addListener(events_cfg.wildcard ? func_names.replace(/\$/g, '*') : func_names, listenerIsClass ? listener[func_names] : listener);
         }
         else {
