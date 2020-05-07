@@ -9,6 +9,8 @@ const build_token = require2('tomjs/handlers/build_token');
 const getTime = require2('tomjs/handlers/gettimes');
 const log4js = require2('tomjs/handlers/log4js');
 const BaseApiError = require2('tomjs/error/base_api_error');
+const Events = require2('tomjs/handlers/events');
+let authEmitter = Events.getEventEmitter("jwt_auth");
 let authLog = console;
 if (typeof (auth_cfg.log4js_category) && (auth_cfg.log4js_category.length > 0)) {
     authLog = log4js.getLogger(auth_cfg.log4js_category);
@@ -82,6 +84,9 @@ let opt = {
                 ctx.websocket.servers.addUser(ctx);
             }
         }
+
+        authEmitter.emit(re ? 'revoked' : 'pass', { ctx, decodedToken, token });
+
         if (!re &&
             auth_cfg.jwt_rewirte_cookie &&
             auth_cfg.jwt_cookie &&
