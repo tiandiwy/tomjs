@@ -88,7 +88,7 @@ module.exports = function (inmongoose) {
             let req = {}
             if (typeof (paths) == "object") {
                 try {
-                    if (paths.app.constructor.name == "Application") {
+                    if (paths.app && paths.app.constructor && paths.app.constructor.name == "Application") {
                         try {
                             req = Object.assign({}, paths.request.query ? paths.request.query : {}, paths.request.body ? paths.request.body : {});
                             if (req[models_cfg.pql.ctx_body_query_field]) {

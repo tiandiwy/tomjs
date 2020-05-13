@@ -8,7 +8,7 @@ exports.getDBObjByID = async (mode, id, pql = undefined) => {
         if (pql === undefined) { obj = await mode.findById(id); }
         else {
             if (isObject(pql)) {
-                if (pql.app.constructor.name == "Application") {
+                if (pql.app && pql.app.constructor && pql.app.constructor.name == "Application") {
                     try {
                         req = Object.assign({}, pql.request.query ? pql.request.query : {}, pql.request.body ? pql.request.body : {});
                         if (req[models_cfg.pql.ctx_body_query_field]) {
