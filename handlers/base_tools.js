@@ -1,32 +1,31 @@
-
-exports.isObject = function isObject(obj) {
+function isObject(obj) {
     return (typeof (obj) == "object") && (!Array.isArray(obj) && obj !== null);
 }
 
-exports.isArray = (arr) => {
+function isArray(arr) {
     return Array.isArray(arr);
 }
 
-exports.isClass = function (func_class) {
+function isClass(func_class) {
     return Object.getOwnPropertyNames(func_class.prototype).length > 1;
 }
 
-exports.isFunction = function (func) {
+function isFunction(func) {
     return typeof (func) == "function";
 }
 
-exports.isString = function (func) {
+function isString(func) {
     return typeof (func) == "string";
 }
 
-exports.clone = function (obj) {
+function clone(obj) {
     return Object.create(
         Object.getPrototypeOf(obj),
         Object.getOwnPropertyDescriptors(obj)
     )
 }
 
-exports.arrDelete = function (arr, item, fn) {
+function arrDelete(arr, item, fn) {
     let idx = undefined;
     if (fn) {
         idx = arr.findIndex(fn);
@@ -39,7 +38,7 @@ exports.arrDelete = function (arr, item, fn) {
     return arr;
 }
 
-exports.arrAdd = function (arr, item, fn) {
+function arrAdd(arr, item, fn) {
     let idx = undefined;
     if (fn) {
         idx = arr.findIndex(fn);
@@ -52,14 +51,14 @@ exports.arrAdd = function (arr, item, fn) {
     return arr;
 }
 
-exports.toBool = (val) => {
+function toBool(val) {
     if (typeof (val) == 'string') {
         if (val == 'false' || val == '0') { return false; }
     } else if (val === undefined) { return undefined; }
     return val ? true : false;
 }
 
-exports.getClassName = (obj) => {
+function getClassName(obj) {
     if (obj && obj.constructor && obj.constructor.toString()) {
         if (obj.constructor.name) {
             return obj.constructor.name;
@@ -78,7 +77,7 @@ exports.getClassName = (obj) => {
     return undefined;
 }
 
-exports.getClassFuncName = function (regx = /\)[\w\W]*?at ([\w.]+) \(/g) {
+function getClassFuncName(regx = /\)[\w\W]*?at ([\w.]+) \(/g) {
     let callerName;
     try { throw new Error(); }
     catch (e) {
@@ -86,4 +85,79 @@ exports.getClassFuncName = function (regx = /\)[\w\W]*?at ([\w.]+) \(/g) {
         callerName = m[1] || m[2];
     }
     return callerName;
-};
+}
+
+function getEmitFirstValue(arr) {
+    let value = undefined;
+    if (isArray(arr)) {
+        let len = arr.length;
+        for (let i = 0; i < len; i++) {
+            if (arr[i] !== undefined) {
+                value = arr[i];
+                break;
+            }
+        }
+    }
+    return value;
+}
+
+function getEmitFirstValueSetCTXBody(ctx, arr) {
+    let newValue = getFirstValue(arr);
+    if (newValue !== undefined) {
+        if (!ctx.body) {
+            if (!isObject(ctx)) { ctx = {}; }
+        }
+        ctx.body = newValue;
+    }
+}
+
+function getEmitValue(arr) {
+    let value = undefined;
+    if (isArray(arr)) {
+        let len = arr.length;
+        for (let i = 0; i < len; i++) {
+            if (arr[i] !== undefined) {
+                if (value == undefined) {
+                    value = arr[i];
+                }
+                else {
+                    if (isObject(value)) {
+                        if (isObject(arr[i])) {
+                            Object.assign(value, arr[i]);
+                        }
+                        else {
+                            value[i] = arr[i];
+                        }
+                    }
+                    else if (isArray(value)) {
+                        value.push(arr[i]);
+                    }
+                    else {
+                        value = arr[i];
+                    }
+                }
+            }
+        }
+    }
+    return value;
+}
+
+function getEmitValueSetCTXBody(ctx, arr) {
+    let newValue = getEmitValue(arr);
+    if (newValue !== undefined) {
+        if (!ctx.body) {
+            if (!isObject(ctx)) { ctx = {}; }
+        }
+        if (isObject(newValue)) {
+            Object.assign(ctx.body, newValue);
+        }
+        else {
+            ctx.body = newValue;
+        }
+    }
+}
+
+module.exports = {
+    isObject, isArray, isClass, isFunction, isString, clone, arrDelete, arrAdd, toBool, getClassName, getClassFuncName,
+    getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody,
+}
