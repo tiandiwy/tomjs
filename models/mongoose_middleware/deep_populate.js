@@ -117,8 +117,8 @@ module.exports = function (inmongoose) {
                         let template = await readFile(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
                         let locals = req[models_cfg.pql.ctx_body_pql_file_values_field] ? JSON.parse(req[models_cfg.pql.ctx_body_pql_file_values_field]) : {};
                         paths = JSON.parse(jsonTemplate(template, Object.assign({}, options.locals, locals)));
-                        //options.is_guard = false;
-                        options.boPQLfile = true;
+                        options.is_guard = false;
+                        options.is_pql_file = true;
                     } catch (err) {
                         throw new BaseApiError(BaseApiError.PQL_FILE_ERROR, 'PQL File:' + paths + " ,error:" + err.message);
                     }
@@ -204,7 +204,7 @@ module.exports = function (inmongoose) {
                 let dqBelongsToMany = undefined;
                 switch (i) {
                     case '$match':
-                        if ((all && !options.is_guard && deep > 0) || options.boPQLfile === true) { RE.match = paths[i]; }
+                        if ((all && !options.is_guard && deep > 0) || options.is_pql_file === true) { RE.match = paths[i]; }
                         break;
                     case '$options':
                         if (all) { RE.options = paths[i]; }

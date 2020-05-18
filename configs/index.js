@@ -1,21 +1,21 @@
 const require2 = require('tomjs/handlers/require2');
+const requireDirectory = require('require-directory')
 let all_configs = {};
 let def_config = undefined;
 
-module.exports = function(dir) {
+module.exports = function (dir) {
     if (dir === undefined) {
         if (def_config === undefined) {
             const path = require2('path');
             const appdir = require2('tomjs/handlers/dir')();
             let cfg_dir = undefined;
-            if(appdir===undefined)
-            {
+            if (appdir === undefined) {
                 cfg_dir = path.join(__dirname, '../../../../configs')
             }
-            else{
+            else {
                 cfg_dir = path.join(appdir, '../configs')
             }
-            all_configs[dir] = require(cfg_dir);
+            all_configs[dir] = Object.assign(requireDirectory(module), require(cfg_dir));
             def_config = all_configs[dir];
         }
         return def_config;
