@@ -16,9 +16,13 @@ module.exports = function (mongoose) {
 
         this.mongoose.Query.prototype.paginate = async function paginate(page_or_ctx, limit) {
             let page = 0;
-            if (isObject(page_or_ctx) && isObject(page_or_ctx[models_cfg.pagination.ctx_field]) && (models_cfg.pagination.pageindex in page_or_ctx[models_cfg.pagination.ctx_field])) {
-                page = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pageindex]);
-                if (!limit) { limit = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pagesize]); }
+            if (isObject(page_or_ctx) && isObject(page_or_ctx[models_cfg.pagination.ctx_field])) {
+                if (page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pageindex]) {
+                    page = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pageindex]);
+                }
+                if ((limit === null || limit === undefined)
+                    && page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pagesize]
+                ) { limit = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pagesize]); }
             }
             else { page = parseInt(page_or_ctx); }
             if (isNaN(limit)) {
