@@ -10,7 +10,7 @@ let access_control_allow = () => {
         if (ctx.request.header.host.split(':')[0] === 'localhost' || ctx.request.header.host.split(':')[0] === '127.0.0.1' || process.env.NODE_ENV === 'development') {
             ctx.set('Access-Control-Allow-Origin', '*')
         } else {
-            ctx.set('Access-Control-Allow-Origin', SystemConfig.server_host)
+            ctx.set('Access-Control-Allow-Origin', SystemConfig.server_access_control_allow_origin ? SystemConfig.server_access_control_allow_origin : SystemConfig.server_host)
         }
         ctx.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
         ctx.set('Access-Control-Allow-Methods', 'PUT, PATCH, POST, GET, DELETE, OPTIONS')
