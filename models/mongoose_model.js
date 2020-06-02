@@ -492,11 +492,11 @@ class MongooseModel {
 
     timestamps() {
         this.isTimestamps = true;
-        this.Schema['createdAt'] = {
+        this.Schema['created_at'] = {
             type: Date,
             default: Date.now,
         };
-        this.Schema['updatedAt'] = {
+        this.Schema['updated_at'] = {
             type: Date,
             default: null,
         };

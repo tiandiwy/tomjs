@@ -1,11 +1,11 @@
 class update_at_middleware {
     constructor(Schema) {
-        if (Schema.obj.updatedAt) {
+        if (Schema.obj.updated_at) {
             Schema.pre('save', function() {
-                this.updatedAt = Date.now();
+                this.updated_at = Date.now();
             });
             Schema.pre('update', function() {
-                this.update({}, { $set: { updatedAt: new Date() } });
+                this.updateMany({}, { $set: { updated_at: new Date() } });
             });
         }
     }
