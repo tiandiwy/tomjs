@@ -43,6 +43,9 @@ class BaseLogin extends BaseUser {
         let field_name = this.field_name();
         if (fCount > 1 && ctx.request.body[field_name]) {
             let val = ctx.request.body[field_name];
+            if (auth_cfg.register_name_email_mobile_lower_case) {
+                val = val.toLowerCase();
+            }
             let whereOrArr = [];
             for (let i = 0; i < fCount; i++) {
                 let obj = {};
@@ -89,11 +92,11 @@ class BaseLogin extends BaseUser {
         }
 
         if (user === null || user === undefined || (check_password && (!await Password.compare(passwd, user[this.field_password()])))) {
-            this.emitter.emit('login_error', {ctx, where:in_where});
+            this.emitter.emit('login_error', { ctx, where: in_where });
             return false;
         }
         let token = await this.BuildToken(ctx, user, expiresin_long);
-        this.emitter.emit('login_ok', {ctx, user, token, expiresin_long});
+        this.emitter.emit('login_ok', { ctx, user, token, expiresin_long });
         return user;
     }
 
@@ -105,23 +108,23 @@ class BaseLogin extends BaseUser {
 
         if (user) {
             let token = await this.BuildToken(ctx, user, expiresin_long);
-            this.emitter.emit('login_by_id', {ctx, user, token});
+            this.emitter.emit('login_by_id', { ctx, user, token });
             return user;
         } else {
-            this.emitter.emit('login_by_id_error', {ctx, id});
+            this.emitter.emit('login_by_id_error', { ctx, id });
             return false;
         }
     }
 
     async logout(ctx) {
-        ctx.cookies.set(auth_cfg.jwt_cookie, '', { path: '/', maxAge: 0,}); //清除cookie
+        ctx.cookies.set(auth_cfg.jwt_cookie, '', { path: '/', maxAge: 0, }); //清除cookie
         let inc = {};
         inc[auth_cfg.jwt_key_token_version] = 1;
         if (ctx.state[auth_cfg.jwt_key] && ctx.state[auth_cfg.jwt_key][auth_cfg.jwt_key_id]) {
             try { await this.users.updateOne({ _id: ctx.state[auth_cfg.jwt_key][auth_cfg.jwt_key_id] }, { $inc: inc }); } catch (e) {
                 throw new BaseApiError(BaseApiError.DB_ERROR, { message: e.message });
             }
-            this.emitter.emit('logout', {ctx, id:ctx.state[auth_cfg.jwt_key][auth_cfg.jwt_key_id]});
+            this.emitter.emit('logout', { ctx, id: ctx.state[auth_cfg.jwt_key][auth_cfg.jwt_key_id] });
             ctx.body = {};
         } else {
             throw new BaseApiError(BaseApiError.JWT_ERROR);

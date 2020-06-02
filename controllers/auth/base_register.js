@@ -13,6 +13,17 @@ class BaseRegister extends BaseUser {
         let user = undefined;
         let expiresin_long = false;
         try {
+            if(auth_cfg.register_name_email_mobile_lower_case){
+                if(ctx.request.body.name){
+                    ctx.request.body.name = ctx.request.body.name.toLowerCase();
+                }
+                if(ctx.request.body[auth_cfg.email_field]){
+                    ctx.request.body[auth_cfg.email_field] = ctx.request.body[auth_cfg.email_field].toLowerCase();
+                }
+                if(ctx.request.body[auth_cfg.mobile_field]){
+                    ctx.request.body[auth_cfg.mobile_field] = ctx.request.body[auth_cfg.mobile_field].toLowerCase();
+                }
+            }
             if (ctx.request.body[auth_cfg.expiresin_long] == 1) {
                 delete ctx.request.body[auth_cfg.expiresin_long];
                 expiresin_long = true;
