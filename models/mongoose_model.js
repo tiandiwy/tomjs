@@ -172,7 +172,7 @@ class MongooseModel {
 
             this.buildRelationshipsVirtuals(); //构建虚拟字段
             if (this.isSoftDeletes) {
-                this.BuildSchema.plugin(mongoose_delete, { deletedAt: true, overrideMethods: 'all', indexFields: ['deleted'] });
+                this.BuildSchema.plugin(mongoose_delete, { deleted_at: true, overrideMethods: 'all', indexFields: ['deleted'] });
             }
             pagination(this.BuildSchema);
             if (this.isDeepPopulate) { deepPopulate(this.BuildSchema); }
