@@ -204,7 +204,20 @@ module.exports = function (inmongoose) {
                 let dqBelongsToMany = undefined;
                 switch (i) {
                     case '$match':
-                        if ((all && !options.is_guard && deep > 0) || options.is_pql_file === true) { RE.match = paths[i]; }
+                        if ((all && !options.is_guard) || options.is_pql_file === true) {
+                            if (deep <= 0 && models_cfg.pql.first_match_allow) {
+                                RE.match = paths[i];
+                                for (const key in RE.match) {
+                                    if (RE.match.hasOwnProperty(key) && key.trim().toLowerCase() === '$or') {
+                                        delete RE.match[key];
+                                        break;
+                                    }
+                                }
+                            }
+                            else {
+                                RE.match = paths[i];
+                            }
+                        }
                         break;
                     case '$options':
                         if (all) { RE.options = paths[i]; }
