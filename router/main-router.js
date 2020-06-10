@@ -87,7 +87,7 @@ class LaravelRouter extends KoaRouter {
         this.post('/auth/forgotpassword', controller_dir + '/password@forgotpassword', { auth: false });
     }
 
-    auth(auth = true, auth_check_all) {
+    auth(auth = true, auth_check_all = true) {
         this.auth_def = auth;
         this.auth_check_all = auth_check_all;
     }
@@ -104,9 +104,9 @@ class LaravelRouter extends KoaRouter {
         auth_check = auth_check === undefined ? this.auth_check_all : auth_check;
         let auth = toBool(info.auth);
         auth = auth === undefined ? this.auth_def : auth;
-        if (auth) {
+        if (auth || auth_check) {
             super.use(router_str, router_jwt(auth_check));
-            if (auth_check) {
+            if (auth) {
                 super.use(router_str, router_jwt_check);
             }
         }
