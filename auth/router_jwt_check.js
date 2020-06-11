@@ -4,7 +4,7 @@ const { isObject } = require2('tomjs/handlers/tools');
 const configs = require2('tomjs/configs')();
 
 let middleware = async function (ctx, next) {
-    if (isObject(ctx.state) && isObject(ctx.state[configs.auth.jwt_key])) {
+    if (isObject(ctx.state) && isObject(ctx.state[configs.auth.jwt_key]) && ctx.state.jwtOriginalError === undefined) {
         return next();
     }
     ctx.throw(401, 'Authentication Error');
