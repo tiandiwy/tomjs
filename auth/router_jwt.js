@@ -108,6 +108,10 @@ let opt = {
                 authLog.info('User ReToken By Cookie Auto', ctx.state[auth_cfg.jwt_key]);
             }
         }
+        if(re){
+            ctx.auth.USER = undefined;
+            ctx.auth.ID = undefined;
+        }
         return re;
     },
 };
