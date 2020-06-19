@@ -573,7 +573,8 @@ class MongooseModel {
         }
         
         model_obj.create = function (doc, options, callback) {
-            if (this.is_guard == true) {
+            const isGuard = this.is_guard === undefined ? model_this.is_guard : this.is_guard;
+            if (isGuard === true) {
                 let data = {};
                 if (isArray(model_this.fillable) && model_this.fillable.length > 0) {
                     let len = model_this.fillable.length;
