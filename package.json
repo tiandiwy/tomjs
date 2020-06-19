@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.9.12",
+  "version": "0.9.13",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {

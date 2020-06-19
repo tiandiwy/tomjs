@@ -571,8 +571,17 @@ class MongooseModel {
                 return model_obj.deleteOne.call(this, { _id: id });
             }
         }
-        
+
         model_obj.create = function (doc, options, callback) {
+            if (arguments.length === 2 &&
+                options &&
+                options.session &&
+                options.session.constructor.name === 'ClientSession') {
+                if (!Array.isArray(doc)) {
+                    arguments[0] = [doc];
+                    doc = [doc];
+                }
+            }
             const isGuard = this.is_guard === undefined ? model_this.is_guard : this.is_guard;
             if (isGuard === true) {
                 let data = {};
@@ -581,8 +590,21 @@ class MongooseModel {
                     let fieldname = undefined;
                     for (let i = 0; i < len; i++) {
                         fieldname = model_this.fillable[i];
-                        if (doc[fieldname]) {
-                            data[fieldname] = doc[fieldname];
+                        if (Array.isArray(doc)) {
+                            data = [];
+                            for (const key in doc) {
+                                if (doc[key][fieldname]) {
+                                    if (data[key] === undefined) {
+                                        data[key] = {};
+                                    }
+                                    data[key][fieldname] = doc[key][fieldname];
+                                }
+                            }
+                        }
+                        else {
+                            if (doc[fieldname]) {
+                                data[fieldname] = doc[fieldname];
+                            }
                         }
                     }
                 } else {
@@ -594,7 +616,16 @@ class MongooseModel {
                     let fieldname = undefined;
                     for (let i = 0; i < len; i++) {
                         fieldname = model_this.guarded[i];
-                        if (data[fieldname]) { delete data[fieldname]; }
+                        if (Array.isArray(data)) {
+                            for (const key in data) {
+                                if (data[key][fieldname]) {
+                                    delete data[key][fieldname];
+                                }
+                            }
+                        }
+                        else {
+                            if (data[fieldname]) { delete data[fieldname]; }
+                        }
                     }
                 }
                 arguments[0] = data;
