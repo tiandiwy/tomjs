@@ -65,13 +65,14 @@ class Events {
         else {
             all_fn_name = all_fn_name_old;
         }
+        
         if (isOneFunc) {
             if (func_names.length <= 0) { func_names = '*'; }
-            emitter.addListener(events_cfg.wildcard ? func_names.replace(/\$/g, '*') : func_names, listenerIsClass ? listener[func_names] : listener);
+            emitter.addListener(events_cfg.wildcard ? func_names.replace(/\$/g, '*') : func_names, listenerIsClass ? listener[func_names].bind(listener) : listener);
         }
         else {
             for (let fn_name in all_fn_name) {
-                emitter.addListener(events_cfg.wildcard ? fn_name.replace(/\$/g, '*') : fn_name, listener[fn_name]);
+                emitter.addListener(events_cfg.wildcard ? fn_name.replace(/\$/g, '*') : fn_name, listener[fn_name].bind(listener));
             }
         }
     }
