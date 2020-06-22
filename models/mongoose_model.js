@@ -583,15 +583,14 @@ class MongooseModel {
                 }
             }
             const isGuard = this.is_guard === undefined ? model_this.is_guard : this.is_guard;
-            if (isGuard === true) {
-                let data = {};
+            if (isGuard == true) {
+                let data = Array.isArray(doc) ? [] : {};
                 if (isArray(model_this.fillable) && model_this.fillable.length > 0) {
                     let len = model_this.fillable.length;
                     let fieldname = undefined;
                     for (let i = 0; i < len; i++) {
                         fieldname = model_this.fillable[i];
                         if (Array.isArray(doc)) {
-                            data = [];
                             for (const key in doc) {
                                 if (doc[key][fieldname]) {
                                     if (data[key] === undefined) {
