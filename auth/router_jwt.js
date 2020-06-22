@@ -68,6 +68,17 @@ let opt = {
                 let user = await users.findById(decodedToken[auth_cfg.jwt_key_id]);
                 if (user !== null) {
                     re = (parseInt(user[auth_cfg.jwt_key_token_version], 10) != parseInt(decodedToken[auth_cfg.jwt_key_token_version], 10));
+                    
+                    //判断用户当前状态是否可以登录
+                    if(!re && auth_cfg.jwt_key_status_pass_values!==undefined && user[auth_cfg.jwt_key_status]!==undefined){
+                        if(isArray(auth_cfg.jwt_key_status_pass_values)){
+                            re = ! auth_cfg.jwt_key_status_pass_values.includes(user[auth_cfg.jwt_key_status])
+                        }
+                        else{
+                            re = auth_cfg.jwt_key_status_pass_values !== user[auth_cfg.jwt_key_status];
+                        }
+                    }
+                    
                     if (!re) {
                         if (isObject(ctx.auth)) {
                             ctx.auth.USER = user;
