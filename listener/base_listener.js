@@ -1,7 +1,14 @@
 const require2 = require('tomjs/handlers/require2');
+const Events = require2('tomjs/handlers/events');
+const { getClassName } = require2('tomjs/handlers/base_tools');
 const { getClassFuncName } = require2('tomjs/handlers/listener_tools');
 const { getWriter } = require2('tomjs/streams');
 class BaseListener {
+    constructor(EventName) {
+        if (EventName === undefined) { EventName = getClassName(this); }
+        this.emitter = Events.getEventEmitter(EventName);
+    }
+
     getStreamsName() {
         return getClassFuncName(/\)[\w\W]*?\.getStreamsName[\w\W]*?at ([\w.]+) \(/g);
     }
