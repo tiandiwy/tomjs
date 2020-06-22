@@ -149,7 +149,7 @@ function getEmitValueSetCTXBody(ctx, arr) {
             if (!isObject(ctx)) { ctx = {}; }
         }
         if (isObject(newValue)) {
-            Object.assign(ctx.body, newValue);
+            ctx.body = Object.assign(JSON.parse(JSON.stringify(ctx.body)), newValue);
         }
         else {
             ctx.body = newValue;
