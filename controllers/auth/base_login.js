@@ -62,11 +62,15 @@ class BaseLogin extends BaseUser {
         }
         let tokenInfo = this.decodeToken(ctx.state[auth_cfg.jwt_tokenkey]);
         ctx.body = {
+            id: user.id,
             name: user.name,
             userid: user.id,
             token: ctx.state[auth_cfg.jwt_tokenkey],
             exp: tokenInfo.exp,
             exp_is_long: tokenInfo.exp_is_long,
+        }
+        if(user[auth_cfg.jwt_key_status]!==undefined){
+            ctx.body[auth_cfg.jwt_key_status] = user[auth_cfg.jwt_key_status];
         }
         return user;
     }
