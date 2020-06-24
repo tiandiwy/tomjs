@@ -137,7 +137,8 @@ async function startRun() {
         await run_websocket(ws, wss);
     }
 
-    return { app, server_http, server_https };
+    const crons = require2('tomjs/handlers/cron');
+    return { app, server_http, server_https, crons };
 }
 
 module.exports = startRun;

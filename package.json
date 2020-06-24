@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.9.21",
+  "version": "0.9.22",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {
@@ -23,6 +23,7 @@
     "cacheman": "^2.2.1",
     "cacheman-redis": "^2.1.0",
     "continuation-local-storage": "^3.2.1",
+    "cron": "^1.8.2",
     "file-exists": "^5.0.1",
     "humps": "^2.0.1",
     "ioredis": "^4.14.1",
