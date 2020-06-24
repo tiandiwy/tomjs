@@ -10,6 +10,7 @@ const KoaBody = require2('koa-body');
 const KoaStatic = require2('koa-static');
 const Subdomain = require2('koa-subdomain');
 const locale = require2('koa-locale');
+const KoaIP = require2('koa-ip');
 const session = require2("tomjs-koa-session2");
 const mount = require2('koa-mount');
 const Store = require2("tomjs/session/cahce_store");
@@ -57,6 +58,13 @@ async function startRun() {
     }
     //.use(mount(configs.static.target_path, KoaStatic(configs.static.source_path, configs.static.options))) // Static resource
     app.subdomainOffset = configs.subdomain.subdomain_offset;
+    const subdomain_ip = new Subdomain();
+    for (let idx in configs.subdomain.maps) {
+        if (isObject(configs.subdomain.maps[idx].ip)) {
+            subdomain_ip.use(idx, KoaIP(configs.subdomain.maps[idx].ip));
+        }
+    }
+    app.use(subdomain_ip.routes());
     const subdomain_proxy = new Subdomain();
     for (let idx in configs.subdomain.maps) {
         if (isString(configs.subdomain.maps[idx].proxy)) {

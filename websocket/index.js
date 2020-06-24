@@ -2,6 +2,7 @@ const require2 = require('tomjs/handlers/require2');//可以开始使用require2
 const app_dir = require2('tomjs/handlers/dir')();
 const path = require2('path');
 const Subdomain = require2('koa-subdomain');
+const KoaIP = require2('koa-ip');
 const auth_user = require2('tomjs/middleware/auth_user');
 const setupLang = require2('tomjs/middleware/setuplang');
 const session = require2("tomjs-koa-session2");
@@ -32,18 +33,23 @@ async function initWS(server_ws, isWSS) {
         }
         return next();
     });
-    
+
     ws.use(auth_user);
     ws.use(session({ key: configs.session.session_key, store: new Store() }));
     ws.use(setupLang);
+    const subdomain_ip = new Subdomain();
     const subdomain = new Subdomain();
     for (let idx in configs.subdomain.maps) {
         if (configs.subdomain.maps[idx].websocket) {
             let route = require(path.join(app_dir, configs.subdomain.maps[idx].websocket));
             subdomain.use(idx, route.routes());
+            if (isObject(configs.subdomain.maps[idx].ip)) {
+                subdomain_ip.use(idx, KoaIP(configs.subdomain.maps[idx].ip));
+            }
         }
     }
     ws.use(websocket_onmessage);
+    ws.use(subdomain_ip.routes());
     ws.use(subdomain.routes());
 
     await ws_end_init(server_ws, isWSS);
