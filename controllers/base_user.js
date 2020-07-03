@@ -60,8 +60,8 @@ let authInfo = {
 };
 
 class BaseUser extends BaseController {
-    constructor() {
-        super();
+    constructor(EventName) {
+        super(EventName);
         this.users = UserModel.Model();
         this.emitter = Events.getEventEmitter('user');
     }
