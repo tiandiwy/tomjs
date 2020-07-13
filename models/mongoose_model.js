@@ -573,15 +573,15 @@ class MongooseModel {
         }
 
         model_obj.create = function (doc, options, callback) {
-            if (arguments.length === 2 &&
-                options &&
-                options.session &&
-                options.session.constructor.name === 'ClientSession') {
-                if (!Array.isArray(doc)) {
-                    arguments[0] = [doc];
-                    doc = [doc];
-                }
-            }
+            // if (arguments.length === 2 &&
+            //     options &&
+            //     options.session &&
+            //     options.session.constructor.name === 'ClientSession') {
+            //     if (!Array.isArray(doc)) {
+            //         arguments[0] = [doc];
+            //         doc = [doc];
+            //     }
+            // }
             const isGuard = this.is_guard === undefined ? model_this.is_guard : this.is_guard;
             if (isGuard == true) {
                 let data = Array.isArray(doc) ? [] : {};
