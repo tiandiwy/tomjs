@@ -4,12 +4,14 @@ const pluralize = require2('pluralize');
 const humps = require2('humps');
 const _ = require2('lodash');
 const system_cfg = require2('tomjs/configs')().system;
-const { isObject, isArray, isClass, isFunction, isString, arrDelete, arrAdd, toBool, getClassName, getClassFuncName, getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody, } = require2('tomjs/handlers/base_tools');
+const { isObject, isArray, isClass, isFunction, isString, clone, arrDelete, arrAdd, toBool, getClassName, getClassFuncName,
+    getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody } = require2('tomjs/handlers/base_tools');
 exports.isObject = isObject;
 exports.isArray = isArray;
 exports.isClass = isClass;
 exports.isFunction = isFunction;
 exports.isString = isString;
+exports.clone = clone;
 exports.arrDelete = arrDelete;
 exports.arrAdd = arrAdd;
 exports.toBool = toBool;
