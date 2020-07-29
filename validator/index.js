@@ -2,15 +2,16 @@ const require2 = require('tomjs/handlers/require2');
 const cfg = require2('tomjs/configs')();
 const Validator = require2('validatorjs_tom');
 const mongoose = require2('mongoose');
-const path = require2('path');
-const AppDir = require2('tomjs/handlers/dir');
+//const path = require2('path');
+//const AppDir = require2('tomjs/handlers/dir');
+const { isArray } = require2('tomjs/handlers/base_tools');
 const Cache = require2('tomjs/cache');
 const LoadClass = require2('tomjs/handlers/load_class');
 
-let captcha_cache = Cache(cfg.captcha.cache_name,cfg.captcha.cache_options);
+let captcha_cache = Cache(cfg.captcha.cache_name, cfg.captcha.cache_options);
 
 Validator.useLang(cfg.system.Lang); //设置默认语言类型
-Validator.registerAsync('unique', async function(value, attribute, value_name, passes) {
+Validator.registerAsync('unique', async function (value, attribute, value_name, passes) {
     // do your database/api checks here etc
     // then call the `passes` method where appropriate:
     //passes(); // if username is available
@@ -59,7 +60,7 @@ Validator.registerAsync('unique', async function(value, attribute, value_name, p
     if (Re) { passes(); } else { passes(false); } // if username is not available
 })
 
-Validator.registerAsync('exists', async function(value, attribute, value_name, passes) {
+Validator.registerAsync('exists', async function (value, attribute, value_name, passes) {
     // do your database/api checks here etc
     // then call the `passes` method where appropriate:
     //passes(); // if username is available
@@ -91,7 +92,15 @@ Validator.registerAsync('exists', async function(value, attribute, value_name, p
             }
             let field = attr_arr[1];
             let where = {};
-            where[field] = value;
+            if (isArray(value)) {
+                where['$or'] = [];
+                value.forEach(value_one => {
+                    let obj = {};
+                    obj[field] = value_one;
+                    where['$or'].push(obj);
+                });
+            }
+            else { where[field] = value; }
             if (attr_arr[2] !== undefined) {
                 if (attr_arr[3] === undefined) { attr_arr[3] = 'id'; }
                 where[attr_arr[3]] = { $ne: attr_arr[2] };
@@ -108,15 +117,15 @@ Validator.registerAsync('exists', async function(value, attribute, value_name, p
     if (Re) { passes(); } else { passes(false); } // if username is not available
 })
 
-Validator.registerAsync('captcha', async function(value, attribute, value_name, passes) {
+Validator.registerAsync('captcha', async function (value, attribute, value_name, passes) {
     let key = value_name + ':' + attribute;
     let Re = await captcha_cache.get(key) === value.toLowerCase();
     await captcha_cache.del(key);
     if (Re) { passes(); } else { passes(false); }
 });
 
-Validator.registerAsync('nullable', function(value, attribute, value_name, passes) {
-    let Re = (value===null)||(value===undefined)||(value==='')||(value===0)
+Validator.registerAsync('nullable', function (value, attribute, value_name, passes) {
+    let Re = (value === null) || (value === undefined) || (value === '') || (value === 0)
     if (Re) { passes(); } else { passes(false); }
 });
 
@@ -127,8 +136,8 @@ Validator.PromiseValidator = (data, rules, customErrorMessages, attributeNames) 
     }
     if (validator.hasAsync) {
         return new Promise((resolve) => {
-            validator.setPassesFails(function() { resolve(validator); },
-                function() { resolve(validator) });
+            validator.setPassesFails(function () { resolve(validator); },
+                function () { resolve(validator) });
         })
     } else {
         if (validator.fails()) {

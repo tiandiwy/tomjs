@@ -193,7 +193,13 @@ class LaravelRouter extends KoaRouter {
                         }
                     }
                 } catch (err) {
-                    rules_obj = undefined;
+                    if (err.code == 'MODULE_NOT_FOUND') {
+                        rules_obj = undefined;
+                    }
+                    else {
+                        throw err;
+                    }
+
                 }
             }
             let rules_end = rules_obj;
