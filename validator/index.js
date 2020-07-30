@@ -109,7 +109,12 @@ Validator.registerAsync('exists', async function (value, attribute, value_name, 
                 where[attr_arr[4]] = attr_arr[5];
             }
             let data = await model.countDocuments(where);
-            Re = (data > 0);
+            if (isArray(value)) {
+                Re = (data == value.length);
+            }
+            else {
+                Re = (data > 0);
+            }
         } catch (e) {
             Re = false;
         }
