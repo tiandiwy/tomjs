@@ -58,9 +58,9 @@ Validator.registerAsync('unique', async function (value, attribute, value_name, 
         }
     }
     if (Re) { passes(); } else { passes(false); } // if username is not available
-})
+});
 
-Validator.registerAsync('exists', async function (value, attribute, value_name, passes) {
+async function base_exists(value, attribute, value_name, passes) {
     // do your database/api checks here etc
     // then call the `passes` method where appropriate:
     //passes(); // if username is available
@@ -120,7 +120,25 @@ Validator.registerAsync('exists', async function (value, attribute, value_name, 
         }
     }
     if (Re) { passes(); } else { passes(false); } // if username is not available
-})
+}
+
+Validator.registerAsync('exists', async function (value, attribute, value_name, passes) {
+    if (!isArray(value)) {
+        return base_exists(value, attribute, value_name, passes);
+    }
+    else {
+        passes(false);
+    }
+});
+
+Validator.registerAsync('array_exists', async function (value, attribute, value_name, passes) {
+    if (isArray(value)) {
+        return base_exists(value, attribute, value_name, passes);
+    }
+    else {
+        passes(false);
+    }
+});
 
 Validator.registerAsync('captcha', async function (value, attribute, value_name, passes) {
     let key = value_name + ':' + attribute;
