@@ -13,6 +13,7 @@ const locale = require2('koa-locale');
 const KoaIP = require2('koa-ip');
 const session = require2("tomjs-koa-session2");
 const mount = require2('koa-mount');
+const getApp = require2("tomjs/handlers/getapp");
 const Store = require2("tomjs/session/cahce_store");
 const auth_user = require2('tomjs/middleware/auth_user');
 const response_formatter = require2('tomjs/middleware/response-formatter');
@@ -44,7 +45,7 @@ async function startRun() {
         database.build();
     }
 
-    let app = await app_init(new Koa());
+    let app = await app_init(getApp(new Koa()));
     locale(app, configs.system.lang_cookie_key);
 
     if (SystemConfig.server_run_type_force_https) {
