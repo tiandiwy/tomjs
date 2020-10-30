@@ -13,6 +13,7 @@ const locale = require2('koa-locale');
 const KoaIP = require2('koa-ip');
 const session = require2("tomjs-koa-session2");
 const mount = require2('koa-mount');
+const unless = require('koa-unless');
 const getApp = require2("tomjs/handlers/getapp");
 const Store = require2("tomjs/session/cahce_store");
 const auth_user = require2('tomjs/middleware/auth_user');
@@ -86,10 +87,22 @@ async function startRun() {
         .use(options());
 
     app.use(auth_user);
-    app.use(session({ key: configs.session.session_key, store: new Store() }))
-        .use(setupLang)
-        .use(KoaBody(configs.body)); // Processing request
-    // .use(PluginLoader(SystemConfig.System_plugin_path))
+    let koaSession = session({ key: configs.session.session_key, store: new Store() });
+    if (configs.session.unless) {
+        koaSession.unless = unless;
+        app.use(koaSession.unless(configs.session.unless));
+    }
+    else { app.use(koaSession); }
+
+    app.use(setupLang);
+
+    let koaBody = KoaBody(configs.body);
+    if (configs.body.unless) {
+        koaBody.unless = unless;
+        app.use(koaBody.unless(configs.body.unless));
+    }
+    else { app.use(koaBody); }
+
     const subdomain = new Subdomain();
     for (let idx in configs.subdomain.maps) {
         if (configs.subdomain.maps[idx].web) {
