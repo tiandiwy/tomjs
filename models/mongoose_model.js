@@ -295,7 +295,7 @@ class MongooseModel {
                 //virtual_field.set(function(val) {});//应该用不到 设置虚拟属性的值，可以直接对象其提供对象即可。
             }
         }
-        this.BuildSchema.plugin(mongooseHidden, { virtuals: hidden_info });
+        this.BuildSchema.plugin(mongooseHidden, { virtuals: hidden_info, defaultHidden: models_cfg.defaultHidden });
     }
 
     baseHas(field_name = "", { ref, localField, foreignField, justOne, match, select, options } = {}) {
