@@ -4,8 +4,6 @@ const BaseUser = require2('tomjs/controllers/base_user');
 const { isObject } = require2('tomjs/handlers/tools');
 const Password = require2('tomjs/password');
 const auth_cfg = require2('tomjs/configs')().auth;
-const UserModel = require2(auth_cfg.auth_model);
-
 //const log4js = require2('tomjs/handlers/log4js');
 // let authLog = console;
 // if (typeof(auth_cfg.log4js_category) && (auth_cfg.log4js_category.length > 0)) {
@@ -26,10 +24,6 @@ class BaseLogin extends BaseUser {
 
     field_password() {
         return 'password';
-    }
-
-    field_status() {
-        return 'status';
     }
 
     post_password() {
@@ -75,7 +69,7 @@ class BaseLogin extends BaseUser {
             exp: tokenInfo.exp,
             exp_is_long: tokenInfo.exp_is_long,
         }
-        if (user[auth_cfg.jwt_key_status] !== undefined) {
+        if(user[auth_cfg.jwt_key_status]!==undefined){
             ctx.body[auth_cfg.jwt_key_status] = user[auth_cfg.jwt_key_status];
         }
         return user;
@@ -101,15 +95,8 @@ class BaseLogin extends BaseUser {
             throw new BaseApiError(BaseApiError.DB_ERROR, { message: e.message });
         }
 
-        if (user === null || user === undefined) {
+        if (user === null || user === undefined || (check_password && (!await Password.compare(passwd, user[this.field_password()])))) {
             this.emitter.emit('login_error', { ctx, where: in_where });
-            return false;
-        }
-        if (isObject(user)
-            && (user[this.field_status()] !== UserModel.defines.status.ok)
-            && (check_password && (!await Password.compare(passwd, user[this.field_password()])))
-        ) {
-            this.emitter.emit('login_error', { ctx, status: user[this.field_status()] });
             return false;
         }
         let token = await this.BuildToken(ctx, user, expiresin_long);
