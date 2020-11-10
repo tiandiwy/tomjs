@@ -58,6 +58,16 @@ function toBool(val) {
     return val ? true : false;
 }
 
+function toObject(val) {
+    if (typeof (val) == 'string') {
+        try {
+            val = JSON.parse(val);
+        }
+        catch (error) { val = undefined; }
+    } else if (val === undefined) { return undefined; }
+    return val;
+}
+
 function getClassName(obj) {
     if (obj && obj.constructor && obj.constructor.toString()) {
         if (obj.constructor.name) {
@@ -158,6 +168,6 @@ function getEmitValueSetCTXBody(ctx, arr) {
 }
 
 module.exports = {
-    isObject, isArray, isClass, isFunction, isString, clone, arrDelete, arrAdd, toBool, getClassName, getClassFuncName,
+    isObject, isArray, isClass, isFunction, isString, clone, arrDelete, arrAdd, toBool, toObject, getClassName, getClassFuncName,
     getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody,
 }
