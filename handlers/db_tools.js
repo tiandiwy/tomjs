@@ -1,25 +1,10 @@
 const require2 = require('tomjs/handlers/require2');
 const BaseApiError = require2('tomjs/error/base_api_error');
-const { isObject } = require2('tomjs/handlers/base_tools');
-const models_cfg = require2('tomjs/configs')().models;
 exports.getDBObjByID = async (mode, id, pql = undefined) => {
     let obj = undefined;
     try {
         if (pql === undefined) { obj = await mode.findById(id); }
         else {
-            if (isObject(pql)) {
-                if (pql.app && pql.app.constructor && pql.app.constructor.name == "Application") {
-                    try {
-                        req = Object.assign({}, pql.request.query ? pql.request.query : {}, pql.request.body ? pql.request.body : {});
-                        if (req[models_cfg.pql.ctx_body_query_field]) {
-                            pql = req[models_cfg.pql.ctx_body_query_field];
-                        }
-                        else {
-                            pql = {};
-                        }
-                    } catch (error) { pql = {}; }
-                }
-            }
             obj = await mode.findById(id).pql(pql);
         }
     } catch (error) {
