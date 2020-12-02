@@ -51,6 +51,11 @@ Validator.registerAsync('unique', async function (value, attribute, value_name, 
             if ((attr_arr[4] !== undefined) && (attr_arr[5] !== undefined)) {
                 where[attr_arr[4]] = attr_arr[5];
             }
+            let outLen = 5;
+            while (attr_arr.length - outLen > 2) {
+                where[attr_arr[outLen + 1]] = attr_arr[outLen + 2];
+                outLen += 2;
+            }
             let data = await model.countDocuments(where);
             Re = (data <= 0);
         } catch (e) {
@@ -107,6 +112,11 @@ async function base_exists(value, attribute, value_name, passes) {
             }
             if ((attr_arr[4] !== undefined) && (attr_arr[5] !== undefined)) {
                 where[attr_arr[4]] = attr_arr[5];
+            }
+            let outLen = 5;
+            while (attr_arr.length - outLen > 2) {
+                where[attr_arr[outLen + 1]] = attr_arr[outLen + 2];
+                outLen += 2;
             }
             let data = await model.countDocuments(where);
             if (isArray(value)) {
