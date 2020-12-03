@@ -69,7 +69,7 @@ class BaseLogin extends BaseUser {
             exp: tokenInfo.exp,
             exp_is_long: tokenInfo.exp_is_long,
         }
-        if(user[auth_cfg.jwt_key_status]!==undefined){
+        if (user[auth_cfg.jwt_key_status] !== undefined) {
             ctx.body[auth_cfg.jwt_key_status] = user[auth_cfg.jwt_key_status];
         }
         return user;
@@ -79,8 +79,10 @@ class BaseLogin extends BaseUser {
         if (!isObject(in_where)) { return false; }
         let expiresin_long = false;
         if (in_where[auth_cfg.expiresin_long] == 1) {
-            delete in_where[auth_cfg.expiresin_long];
             expiresin_long = true;
+        }
+        if (in_where[auth_cfg.expiresin_long] !== undefined) {
+            delete in_where[auth_cfg.expiresin_long];
         }
         let where = Object.assign({}, in_where);
         let passwd = '';
