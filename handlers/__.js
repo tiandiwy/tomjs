@@ -2,13 +2,14 @@ const require2 = require('tomjs/handlers/require2');
 const system_cfg = require2('tomjs/configs')().system;
 const path = require2('path');
 const AppDir = require2('tomjs/handlers/dir');
+const { isString } = require2('tomjs/handlers/base_tools');
 //text 要翻译的文本
 //lang 指定语言 string 
 
 function __(text, lang) {
     let sLang = system_cfg.Lang;
 
-    if (!lang) {
+    if (isString(lang) && lang.length > 0) {
         sLang = lang;
     }
 
