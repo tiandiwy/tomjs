@@ -8,7 +8,7 @@ const AppDir = require2('tomjs/handlers/dir');
 function __(text, lang) {
     let sLang = system_cfg.Lang;
 
-    if (lang !== undefined) {
+    if (!lang) {
         sLang = lang;
     }
 
