@@ -287,7 +287,8 @@ exports.getUrlDomain = function (defUrlDomain) {
         str_port = ":" + system_cfg.server_http_port;
     }
     let server_host = system_cfg.server_host;
-    let url = system_cfg.server_url_type + system_cfg.server_host;
+    const isAllUrl = system_cfg.server_host.trimLeft().toLowerCase().startsWith('http');
+    let url = isAllUrl ? system_cfg.server_host : system_cfg.server_url_type + system_cfg.server_host;
     if (isString(defUrlDomain)) {
         if (defUrlDomain.trimLeft().toLowerCase().startsWith('https://') || defUrlDomain.trimLeft().toLowerCase().startsWith('http://')) {
             url = defUrlDomain;
@@ -300,7 +301,7 @@ exports.getUrlDomain = function (defUrlDomain) {
     else if (defUrlDomain === false) {
         url = "";
     }
-    if (str_port.length > 0 || (server_host.trim().toLowerCase() != 'localhost')) {
+    if ((str_port.length > 0 || (server_host.trim().toLowerCase() != 'localhost'))&& !isAllUrl) {
         url = system_cfg.server_url_type + server_host + str_port;
     }
     return url;
