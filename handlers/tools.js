@@ -301,7 +301,7 @@ exports.getUrlDomain = function (defUrlDomain) {
     else if (defUrlDomain === false) {
         url = "";
     }
-    if ((str_port.length > 0 || (server_host.trim().toLowerCase() != 'localhost'))&& !isAllUrl) {
+    if ((str_port.length > 0 || (server_host.trim().toLowerCase() != 'localhost'))&& !isAllUrl && defUrlDomain !== false) {
         url = system_cfg.server_url_type + server_host + str_port;
     }
     return url;
