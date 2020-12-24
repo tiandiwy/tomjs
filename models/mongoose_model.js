@@ -44,7 +44,7 @@ class MongooseModel {
         this.isUpdateAssign = false;
         this.isSupportSequelize = true;
         this.find_return_one = false; //为了兼容 sequelize find函数直接返回单个对象而不是数组
-        this.eventFunctions = {};//可以将自定义
+        this.eventFunctions = undefined;//可以将自定义事件函数对象
 
         this.relationshipsVirtuals = {}; //需要建立的关联虚拟字段
         this._all_belongsToMany = {};
@@ -182,7 +182,7 @@ class MongooseModel {
             if (this.isUpdateAssign) { new update_assign(this.BuildSchema); }
             if (this.isSupportSequelize) { new support_sequelize(this.BuildSchema); }
 
-            new events(this.BuildSchema, this.eventFunctions);
+            new events(this.BuildSchema, this.eventFunctions || this);
         } else {
             throw new Error(this.constructor.name + ' Not find "Schema"!');
         };
