@@ -27,9 +27,9 @@ function ArrToOrderObj(arr) {
 }
 class support_sequelize_middleware {
     constructor(Schema) {
-        function find() {
+        function find(next) {
             let isSequelize = true;
-            if (typeof(this._conditions) == 'object') {
+            if (typeof (this._conditions) == 'object') {
                 let arr = ['deleted', 'where', 'attributes', 'offset', 'limit', 'include', 'order', 'group'];
                 for (let idx in this._conditions) {
                     if (arr.indexOf(idx) == -1) {
@@ -68,6 +68,7 @@ class support_sequelize_middleware {
                     }
                 }
             }
+            if (next) { return next(); }
         };
         Schema.pre('find', find);
         Schema.pre('findOne', find);

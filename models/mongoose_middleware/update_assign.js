@@ -4,10 +4,11 @@ class update_assign_middleware {
         Schema.pre('updateMany', this.assign);
     }
 
-    assign() {
+    assign(next) {
         if (this._update.$set) {
             this._update.$set = this.schema.statics.assign(this._update.$set);
         }
+        if (next) { return next(); }
     }
 }
 

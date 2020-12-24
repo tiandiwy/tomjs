@@ -17,6 +17,7 @@ const humps = require2('humps');
 const _ = require2('lodash');
 const MongooseError = require2('tomjs/error/mongoose_error');
 const update_at = require2('tomjs/models/mongoose_middleware/update_at');
+const events = require2('tomjs/models/mongoose_middleware/events');
 const update_assign = require2('tomjs/models/mongoose_middleware/update_assign');
 const support_sequelize = require2('tomjs/models/mongoose_middleware/support_sequelize');
 const deepPopulate = require2('tomjs/models/mongoose_middleware/deep_populate')(mongoose);
@@ -43,6 +44,7 @@ class MongooseModel {
         this.isUpdateAssign = false;
         this.isSupportSequelize = true;
         this.find_return_one = false; //为了兼容 sequelize find函数直接返回单个对象而不是数组
+        this.eventFunctions = {};//可以将自定义
 
         this.relationshipsVirtuals = {}; //需要建立的关联虚拟字段
         this._all_belongsToMany = {};
@@ -179,6 +181,8 @@ class MongooseModel {
             if (this.isTimestamps) { new update_at(this.BuildSchema); }
             if (this.isUpdateAssign) { new update_assign(this.BuildSchema); }
             if (this.isSupportSequelize) { new support_sequelize(this.BuildSchema); }
+
+            new events(this.BuildSchema, this.eventFunctions);
         } else {
             throw new Error(this.constructor.name + ' Not find "Schema"!');
         };
