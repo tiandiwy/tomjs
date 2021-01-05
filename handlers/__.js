@@ -21,7 +21,11 @@ function __(text, lang) {
     } catch (e) { loadOK = false; }
     if (loadOK) {
         try {
-            if (_lang[text]) { return _lang[text]; } else { return text; }
+            let arr = text.split(".", 2);
+            if (arr.length < 2) {
+                arr = ["default", text];
+            }
+            if (_lang[arr[0]][arr[1]]!==undefined) { return _lang[arr[0]][arr[1]]; } else { return text; }
         } catch (e) { return text; }
     } else { return text; }
 }
