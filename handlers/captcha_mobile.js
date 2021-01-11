@@ -47,14 +47,9 @@ module.exports = async function(captcha_name, mobile_field_name, phoneNumber) {
     };
     await captcha_cache.set(captcha_name + ":" + data.key, data.text.toLowerCase());
 
-    let params = {};
-    params[cfg.captcha.mobile_param_code] = data.key;
-    let templateId = undefined;
-    if (cfg.captcha.mobile_template_ids[captcha_name]) {
-        templateId = cfg.captcha.mobile_template_ids[captcha_name];
-    } else {
-        templateId = cfg.captcha.mobile_default_template_id;
-    }
+    let params = cfg.captcha.mobile_templates[cfg.captcha.mobile_gateways][captcha_name].params;
+    params[cfg.captcha.mobile_templates[cfg.captcha.mobile_gateways][captcha_name].code] = data.text;
+    const templateId = cfg.captcha.mobile_templates[cfg.captcha.mobile_gateways][captcha_name].template_id;
 
     emitter = Events.getEventEmitter('send_sms');
     emitter.emit('send', { phoneNumber, templateId, params, mobile_gateways:cfg.captcha.mobile_gateways });
