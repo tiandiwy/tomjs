@@ -551,7 +551,7 @@ class MongooseModel {
             return model_obj.__proto__.find.apply(this, arguments).where('undefined').ne(true);
         }
         model_obj.findAll = function () {
-            return model_obj.find.apply(this, arguments);
+            return model_obj.__proto__.find.apply(this, arguments).where('undefined').ne(true);
         }
         if (this.find_return_one) {
             model_obj.find = function () {
