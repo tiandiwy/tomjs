@@ -544,13 +544,11 @@ class MongooseModel {
         model_obj.getModelClassName = () => {
             return this.getModelClassName();
         };
-        let old_create = model_obj.create;
         model_obj.CreateNotGuard = function (doc, options, callback) {
-            return old_create.apply(this, arguments);
+            return model_obj.__proto__.create.apply(this, arguments);
         }
-        let old_find = model_obj.find;
         model_obj.find = function () {
-            return old_find.apply(this, arguments).where('undefined').ne(true);
+            return model_obj.__proto__.find.apply(this, arguments).where('undefined').ne(true);
         }
         model_obj.findAll = function () {
             return model_obj.find.apply(this, arguments);
@@ -633,7 +631,7 @@ class MongooseModel {
                 }
                 arguments[0] = data;
             }
-            return old_create.apply(this, arguments);
+            return model_obj.__proto__.create.apply(this, arguments);
         };
         if (typeof (this.modelAfter) == 'function') {
             let obj = this.modelAfter(model_obj);
