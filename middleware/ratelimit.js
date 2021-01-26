@@ -17,6 +17,9 @@ module.exports = function (ratelimit_name = 'default') {
     let isRedis = true;
 
     let opts = clone(ratelimit_cfg[ratelimit_name].options);
+    if (!opts.namespace) {
+        opts.namespace = opts.prefixKey ? opts.prefixKey : ratelimit_name;
+    }
     if (!isFunction(opts.id)) {
         if (!opts.prefixKey) { opts.prefixKey = ratelimit_name; }
         opts.id = (ctx) => opts.prefixKey + ' ' + ctx.ip;
