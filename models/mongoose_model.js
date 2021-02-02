@@ -547,11 +547,11 @@ class MongooseModel {
         model_obj.CreateNotGuard = function (doc, options, callback) {
             return model_obj.__proto__.create.apply(this, arguments);
         }
-        model_obj.find = function () {
-            return model_obj.__proto__.find.apply(this, arguments).where('undefined').ne(true);
-        }
+        // model_obj.find = function () {
+        //     return model_obj.__proto__.find.apply(this, arguments).where('undefined').ne(true);
+        // }
         model_obj.findAll = function () {
-            return model_obj.__proto__.find.apply(this, arguments).where('undefined').ne(true);
+            return model_obj.find.apply(this, arguments);
         }
         if (this.find_return_one) {
             model_obj.find = function () {
