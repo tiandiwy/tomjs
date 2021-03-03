@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.9.54",
+  "version": "0.9.55",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {
@@ -55,7 +55,7 @@
     "mysql2": "^1.7.0",
     "nodemailer": "^4.7.0",
     "object-observer": "^1.2.0",
-    "p-queue": "^3.2.0",
+    "p-queue": "^6.6.2",
     "pbkdf2": "^3.1.1",
     "pluralize": "^7.0.0",
     "pug": "^2.0.3",
