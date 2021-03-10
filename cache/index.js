@@ -16,7 +16,7 @@ function cache(name, options) {
             all_caches[name] = new Cacheman(name, options);
         }
         else {
-            all_caches[name] = new Cacheman(name, config.name);
+            all_caches[name] = new Cacheman(name, config[name]);
         }
         return all_caches[name];
     }
