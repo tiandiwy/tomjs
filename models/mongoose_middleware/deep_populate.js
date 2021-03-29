@@ -277,7 +277,7 @@ module.exports = function (inmongoose) {
                 }
             }
         }
-        if (deep !== 0 && options.default_limit) {
+        if (deep !== 0 && options.default_limit && options.is_guard) {
             if (!isObject(RE.options)) { RE.options = {}; }
             RE.options.limit = options.default_limit;
         }
