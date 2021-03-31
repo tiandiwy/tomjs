@@ -4,7 +4,7 @@ const { join, extname } = require2('path');
 const pluralize = require2('pluralize');
 const _ = require2('lodash');
 const appDir = require2('tomjs/handlers/dir')();
-const { isArray, isString, isObject, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
+const { isArray, isObject, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
 const jsonTemplate = require2('tomjs/handlers/json_templater');
 const LoadClass = require2('tomjs/handlers/load_class');
 const models_cfg = require2('tomjs/configs')().models;
@@ -63,6 +63,7 @@ module.exports = function (inmongoose) {
         }
         if (options.max_deep === undefined) { options.max_deep = _def.max_deep === undefined ? 3 : _def.max_deep; }
         if (options.default_limit === undefined) { options.default_limit = _def.default_limit === undefined ? 10 : _def.default_limit; }
+        if (options.default_limit_max === undefined) { options.default_limit_max = _def.default_limit_max === undefined ? 100 : _def.default_limit_max; }
         if (options.is_guard === undefined) { options.is_guard = _def.is_guard === undefined ? true : _def.is_guard; }
         if (options._deepPopulate_values === undefined) { options._deepPopulate_values = _def._deepPopulate_values === undefined ? '_deepPopulate_values' : _def._deepPopulate_values; }
         if (options.getValues === undefined) { options.getValues = _def.getValues === undefined ? 'getValues' : _def.getValues; }
@@ -277,9 +278,10 @@ module.exports = function (inmongoose) {
                 }
             }
         }
-        if (deep !== 0 && options.default_limit && options.is_guard) {
+        if (deep !== 0 && options.default_limit && options.default_limit_max) {
             if (!isObject(RE.options)) { RE.options = {}; }
-            RE.options.limit = options.default_limit;
+            if (RE.options.limit === undefined) { RE.options.limit = options.default_limit; }
+            if (RE.options.limit > options.default_limit_max) { RE.options.limit = options.default_limit_max; }
         }
         if (options.is_guard) {
             if (schema) {
