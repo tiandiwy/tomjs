@@ -26,8 +26,9 @@ function __2(lang, text) {
 module.exports = async function(view_name, locals = {}, lang, root_path) {
     let paths = undefined;
     let err = undefined;
+    root_path = root_path === undefined ? views_cfg.path : root_path
     try {
-        paths = await getPaths(root_path === undefined ? views_cfg.path : root_path, path.join(...view_name.split('.')), extension);
+        paths = await getPaths(root_path, path.join(...view_name.split('.')), extension);
     } catch (e) { err = e; }
     if (err != undefined) {
         let arr = view_name.split('.');
@@ -57,7 +58,7 @@ module.exports = async function(view_name, locals = {}, lang, root_path) {
     const render = engineSource[engineName];
 
     if (!engineName || !render) { return Promise.reject(new Error(`Engine not found for the ".${suffix}" file extension`)); }
-    let html = await render(path.resolve(views_cfg.path, paths.rel), state);
+    let html = await render(path.resolve(root_path, paths.rel), state);
     if (locals.pretty) {
         html = pretty(html);
     }
