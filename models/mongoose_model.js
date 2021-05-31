@@ -494,14 +494,16 @@ class MongooseModel {
         return this.hasManyThrough(fieldName, through, { localField, foreignField, populateField, match, select, options });
     }
 
-    timestamps() {
+    timestamps(index = true) {
         this.isTimestamps = true;
         this.Schema['created_at'] = {
             type: Date,
+            index,
             default: Date.now,
         };
         this.Schema['updated_at'] = {
             type: Date,
+            index,
             default: null,
         };
     }
