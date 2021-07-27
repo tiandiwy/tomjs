@@ -79,7 +79,7 @@ module.exports = function (inmongoose) {
         options = options || {};
         if (options.max_deep === undefined) { options.max_deep = 3; }
         if (!isObject(options.locals)) { options.locals = {}; }
-        if (deep >= options.max_deep) {
+        if (deep >= options.max_deep && !options.is_pql_file) {
             return undefined;
         }
 
