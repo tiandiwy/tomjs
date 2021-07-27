@@ -29,11 +29,11 @@ module.exports = function (mongoose) {
                 limit = models_cfg.pagination.pagesize_default;
                 limit = isNaN(limit) ? 10 : limit;
             }
-            let limit_min = models_cfg.pagination.pagesize_min;
+            const limit_min = models_cfg.pagination.pagesize_min;
             if (!isNaN(limit_min)) {
                 limit = limit < limit_min ? limit_min : limit;
             }
-            let limit_max = models_cfg.pagination.pagesize_max;
+            const limit_max = models_cfg.pagination.pagesize_max;
             if (!isNaN(limit_max)) {
                 limit = limit >= limit_max ? limit_max : limit;
             }
@@ -41,13 +41,15 @@ module.exports = function (mongoose) {
             page = isNaN(page) ? 0 : page;
             page = page < 1 ? 1 : page;
             let query = this;
-            let model = this.model;
-            total = await model.countDocuments(query._conditions);
+            const model = this.model;
+            const total = await model.countDocuments(query._conditions);
+            const max_page = parseInt(total / limit, 10) + (total % limit == 0 ? 0 : 1);
 
-            let skipFrom = (page * limit) - limit;
+
+            const skipFrom = (page * limit) - limit;
 
             query = query.skip(skipFrom).limit(limit);
-            this[models_cfg.pagination.pagination_info] = { page, limit, total };
+            this[models_cfg.pagination.pagination_info] = { page, max_page, limit, total };
             return this;
         };
     };
