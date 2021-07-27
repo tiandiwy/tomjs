@@ -4,6 +4,7 @@ const pluralize = require2('pluralize');
 const humps = require2('humps');
 const _ = require2('lodash');
 const system_cfg = require2('tomjs/configs')().system;
+const models_cfg = require2('tomjs/configs')().models;
 const { isObject, isArray, isClass, isFunction, isString, clone, arrDelete, arrAdd, toBool, getClassName, getClassFuncName,
     getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody } = require2('tomjs/handlers/base_tools');
 exports.isObject = isObject;
@@ -252,25 +253,25 @@ exports.renameFile = function renameFile(sourceFile, destPath) {
     })
 }
 
-exports.valuesHideFields = function (fileds, values) {
-    for (let idx in fileds) {
-        if (!exports.isObject(fileds[idx])) {
+exports.valuesHideFields = function (fields, values) {
+    for (let idx in fields) {
+        if (!exports.isObject(fields[idx])) {
             if (exports.isArray(values)) {
                 let values_len = values.length;
                 for (let j = 0; j < values_len; j++) {
-                    if (idx in values[j]) { if (!exports.toBool(fileds[idx])) { delete values[j][idx]; } }
+                    if (idx in values[j]) { if (!exports.toBool(fields[idx])) { delete values[j][idx]; } }
                 }
             }
-            else { if (idx in values) { if (!exports.toBool(fileds[idx])) { delete values[idx]; } } }
+            else { if (idx in values) { if (!exports.toBool(fields[idx])) { delete values[idx]; } } }
         }
         else {
             if (exports.isArray(values)) {
                 let values_len = values.length;
                 for (let j = 0; j < values_len; j++) {
-                    if (idx in values[j]) { values[j][idx] = exports.valuesHideFields(fileds[idx], values[j][idx]); }
+                    if (idx in values[j]) { values[j][idx] = exports.valuesHideFields(fields[idx], values[j][idx]); }
                 }
             }
-            else { if (idx in values) { values[idx] = exports.valuesHideFields(fileds[idx], values[idx]); } }
+            else { if (idx in values) { values[idx] = exports.valuesHideFields(fields[idx], values[idx]); } }
         }
     }
     return values;
@@ -305,4 +306,23 @@ exports.getUrlDomain = function (defUrlDomain) {
         url = system_cfg.server_url_type + server_host + str_port;
     }
     return url;
+}
+
+exports.filterCTXQuery = function(ctx) {
+    let reObj = {};
+    if (isObject(ctx.query)) {
+        reObj = JSON.parse(JSON.stringify(ctx.query));
+        if (reObj[models_cfg.pql.ctx_body_query_field]) {
+            delete reObj[models_cfg.pql.ctx_body_query_field];
+        }
+        if (models_cfg.pagination.ctx_field == "query") {
+            if (reObj[models_cfg.pagination.pageindex]) {
+                delete reObj[models_cfg.pagination.pageindex];
+            }
+            if (reObj[models_cfg.pagination.pagesize]) {
+                delete reObj[models_cfg.pagination.pagesize];
+            }
+        }
+    }
+    return reObj;
 }
