@@ -281,7 +281,7 @@ module.exports = function (inmongoose) {
         if (deep !== 0 && options.default_limit && options.default_limit_max) {
             if (!isObject(RE.options)) { RE.options = {}; }
             if (RE.options.limit === undefined) { RE.options.limit = options.default_limit; }
-            if (RE.options.limit > options.default_limit_max) { RE.options.limit = options.default_limit_max; }
+            if (RE.options.limit > options.default_limit_max && !options.is_pql_file) { RE.options.limit = options.default_limit_max; }
         }
         if (options.is_guard) {
             if (schema) {
