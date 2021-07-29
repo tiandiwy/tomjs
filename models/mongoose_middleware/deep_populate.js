@@ -125,7 +125,7 @@ module.exports = function (inmongoose) {
                     }
                 }
             }
-
+            options.oldPaths = JSON.parse(JSON.stringify(paths));
         }
         if (options.is_guard === undefined) { options.is_guard = true; }
 
@@ -275,6 +275,11 @@ module.exports = function (inmongoose) {
                             }
                         }
                         break;
+                }
+            }
+            else {
+                if (i == '$must') {
+                    RE.$must = paths[i];
                 }
             }
         }
@@ -459,13 +464,43 @@ module.exports = function (inmongoose) {
         }
     }
 
+    function must_check(value, Paths) {
+        if (!value && Paths.$must) { return null; }
+        for (const key in Paths) {
+            if (isObject(Paths[key]) && key[0] != '$') {
+                const populate = Paths[key];
+                if (!isArray(value[key])) {
+                    if (must_check(value[key], populate) === null) {
+                        return null;
+                    }
+                }
+                else {
+                    const len = value[key].length;
+                    let have = false;
+                    for (let index = 0; index < len; index++) {
+                        const one = value[key][index];
+                        if (must_check(one, populate) !== null) {
+                            have = true;
+                            break;
+                        }
+                    }
+                    if (!have) {
+                        return null;
+                    }
+                }
+            }
+        }
+        return value;
+    }
+
     function getValues(values, EndRE, hideFields) {
         if (isObject(values) && typeof (values.toJSON) == "function") {
             let value = values.toJSON();
             field_check(EndRE, value);
             if (isObject(hideFields)) { value = valuesHideFields(hideFields, value); }
-            return value;
+            return must_check(value, EndRE.oldPaths);
         } else if (isArray(values)) {
+            let nullCount = 0;
             let len = values.length;
             let one = undefined;
             let all = [];
@@ -475,7 +510,11 @@ module.exports = function (inmongoose) {
                     let value = one.toJSON();
                     field_check(EndRE, value);
                     if (isObject(hideFields)) { value = valuesHideFields(hideFields, value); }
-                    all[i] = value;
+                    const val = must_check(value, EndRE.oldPaths);
+                    if (val !== null) { all.push(val); }
+                    else {
+                        nullCount++;
+                    }
                 }
             }
             let re = undefined;
@@ -494,8 +533,9 @@ module.exports = function (inmongoose) {
     function endDeepPopulate(values) {
         if (values) {
             if (this._deepPopulatePaths_End) {
-                let EndRE = this._deepPopulatePaths_End.re;
-                let options = this._deepPopulatePaths_End.options;
+                const EndRE = this._deepPopulatePaths_End.re;
+                EndRE.oldPaths = this._deepPopulatePaths_End.options.oldPaths;
+                const options = this._deepPopulatePaths_End.options;
                 delete this._deepPopulatePaths_End;
                 if (options._deepPopulate_values) {
                     values[options._deepPopulate_values] = getValues(values, EndRE);
