@@ -466,26 +466,28 @@ module.exports = function (inmongoose) {
 
     function must_check(value, Paths) {
         if (!value && Paths.$must) { return null; }
-        for (const key in Paths) {
-            if (isObject(Paths[key]) && key[0] != '$') {
-                const populate = Paths[key];
-                if (!isArray(value[key])) {
-                    if (must_check(value[key], populate) === null) {
-                        return null;
-                    }
-                }
-                else {
-                    const len = value[key].length;
-                    let have = false;
-                    for (let index = 0; index < len; index++) {
-                        const one = value[key][index];
-                        if (must_check(one, populate) !== null) {
-                            have = true;
-                            break;
+        if (value) {
+            for (const key in Paths) {
+                if (isObject(Paths[key]) && key[0] != '$') {
+                    const populate = Paths[key];
+                    if (!isArray(value[key])) {
+                        if (must_check(value[key], populate) === null) {
+                            return null;
                         }
                     }
-                    if (!have) {
-                        return null;
+                    else {
+                        const len = value[key].length;
+                        let have = false;
+                        for (let index = 0; index < len; index++) {
+                            const one = value[key][index];
+                            if (must_check(one, populate) !== null) {
+                                have = true;
+                                break;
+                            }
+                        }
+                        if (!have) {
+                            return null;
+                        }
                     }
                 }
             }
