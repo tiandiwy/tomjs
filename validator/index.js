@@ -10,13 +10,23 @@ const LoadClass = require2('tomjs/handlers/load_class');
 
 let captcha_cache = Cache(cfg.captcha.cache_name, cfg.captcha.cache_options);
 
+function buildValue(value) {
+    let where = value.trim();
+    if (where[0] == "{" && where[where.length - 1] == '}') {
+        try { where = JSON.parse(where); }
+        catch (error) { where = value; }
+    }
+    else { where = value; }
+    return where;
+}
+
 Validator.useLang(cfg.system.Lang); //设置默认语言类型
 Validator.registerAsync('unique', async function (value, attribute, value_name, passes) {
     // do your database/api checks here etc
     // then call the `passes` method where appropriate:
     //passes(); // if username is available
     let Re = false;
-    let attribute_arr = attribute.split(",");
+    let attribute_arr = attribute.split(/(?<!\{[^}]*),(?![^{]*\})/);//以逗号分割，但不包括{}中的逗号
 
     if (attribute_arr.length > 0) {
         let attr_arr = [undefined, undefined, undefined, undefined, undefined, undefined]; //表名，字段名，排除值（默认id字段），排除值的字段，条件字段，条件值
@@ -49,11 +59,11 @@ Validator.registerAsync('unique', async function (value, attribute, value_name, 
                 where[attr_arr[3]] = { $ne: attr_arr[2] };
             }
             if ((attr_arr[4] !== undefined) && (attr_arr[5] !== undefined)) {
-                where[attr_arr[4]] = attr_arr[5];
+                where[attr_arr[4]] = buildValue(attr_arr[5]);
             }
             let outLen = 5;
             while (attr_arr.length - outLen > 2) {
-                where[attr_arr[outLen + 1]] = attr_arr[outLen + 2];
+                where[attr_arr[outLen + 1]] = buildValue(attr_arr[outLen + 2]);
                 outLen += 2;
             }
             let data = await model.countDocuments(where);
@@ -70,7 +80,7 @@ async function base_exists(value, attribute, value_name, passes) {
     // then call the `passes` method where appropriate:
     //passes(); // if username is available
     let Re = false;
-    let attribute_arr = attribute.split(",");
+    let attribute_arr = attribute.split(/(?<!\{[^}]*),(?![^{]*\})/);//以逗号分割，但不包括{}中的逗号
 
     if (attribute_arr.length > 0) {
         let attr_arr = [undefined, undefined, undefined, undefined, undefined, undefined, undefined]; //表名，字段名，排除值（默认id字段），排除值的字段，条件字段，条件值
@@ -111,11 +121,11 @@ async function base_exists(value, attribute, value_name, passes) {
                 where[attr_arr[3]] = { $ne: attr_arr[2] };
             }
             if ((attr_arr[4] !== undefined) && (attr_arr[5] !== undefined)) {
-                where[attr_arr[4]] = attr_arr[5];
+                where[attr_arr[4]] = buildValue(attr_arr[5]);
             }
             let outLen = 5;
             while (attr_arr.length - outLen > 2) {
-                where[attr_arr[outLen + 1]] = attr_arr[outLen + 2];
+                where[attr_arr[outLen + 1]] = buildValue(attr_arr[outLen + 2]);
                 outLen += 2;
             }
             let data = await model.countDocuments(where);
