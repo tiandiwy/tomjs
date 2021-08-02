@@ -465,14 +465,14 @@ module.exports = function (inmongoose) {
     }
 
     function must_check(value, Paths) {
-        if (!value && Paths.$must) { return null; }
+        if (value===null && Paths.$must) { return undefined; }
         if (value) {
             for (const key in Paths) {
                 if (isObject(Paths[key]) && key[0] != '$') {
                     const populate = Paths[key];
                     if (!isArray(value[key])) {
-                        if (must_check(value[key], populate) === null) {
-                            return null;
+                        if (must_check(value[key], populate) === undefined) {
+                            return undefined;
                         }
                     }
                     else {
@@ -480,13 +480,13 @@ module.exports = function (inmongoose) {
                         let have = false;
                         for (let index = 0; index < len; index++) {
                             const one = value[key][index];
-                            if (must_check(one, populate) !== null) {
+                            if (must_check(one, populate) !== undefined) {
                                 have = true;
                                 break;
                             }
                         }
                         if (!have) {
-                            return null;
+                            return undefined;
                         }
                     }
                 }
@@ -513,7 +513,7 @@ module.exports = function (inmongoose) {
                     field_check(EndRE, value);
                     if (isObject(hideFields)) { value = valuesHideFields(hideFields, value); }
                     const val = must_check(value, EndRE.oldPaths);
-                    if (val !== null) { all.push(val); }
+                    if (val !== undefined) { all.push(val); }
                     else {
                         nullCount++;
                     }
