@@ -315,6 +315,9 @@ exports.filterCTXQuery = function(ctx) {
         if (reObj[models_cfg.pql.ctx_body_query_field]) {
             delete reObj[models_cfg.pql.ctx_body_query_field];
         }
+        if (reObj[models_cfg.pql.ctx_body_pql_file_values_field]) {
+            delete reObj[models_cfg.pql.ctx_body_pql_file_values_field];
+        }
         if (models_cfg.pagination.ctx_field == "query") {
             if (reObj[models_cfg.pagination.pageindex]) {
                 delete reObj[models_cfg.pagination.pageindex];

@@ -485,7 +485,7 @@ module.exports = function (inmongoose) {
                                 break;
                             }
                         }
-                        if (!have) {
+                        if (!have && Paths[key].$must) {
                             return undefined;
                         }
                     }
