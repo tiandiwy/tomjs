@@ -9,6 +9,7 @@ const websockify = require2('koa-websocket');
 const KoaBody = require2('koa-body');
 const KoaStatic = require2('koa-static');
 const Subdomain = require2('koa-subdomain');
+const all_params = require2('tomjs/middleware/all_params');
 const locale = require2('koa-locale');
 const KoaIP = require2('koa-ip');
 const session = require2("tomjs-koa-session2");
@@ -102,6 +103,8 @@ async function startRun() {
         app.use(koaBody.unless(configs.body.unless));
     }
     else { app.use(koaBody); }
+
+    app.use(all_params);
 
     const subdomain = new Subdomain();
     for (let idx in configs.subdomain.maps) {
