@@ -75,7 +75,7 @@ function toObject(val) {
     }
 
     for (let i = 1; i < arguments_count; i++) {
-        str = str.replace(new RegExp("\\{" + i + "\\}", "g"), arguments[i]);
+        str = str.replace(new RegExp("\\{" + (i-1) + "\\}", "g"), arguments[i]);
     }
     return str;
 }
