@@ -68,6 +68,18 @@ function toObject(val) {
     return val;
 }
 
+ function formatReplace(str) {
+    const arguments_count = arguments.length;
+    if (arguments.length == 1) {
+        return str;
+    }
+
+    for (let i = 1; i < arguments_count; i++) {
+        str = str.replace(new RegExp("\\{" + i + "\\}", "g"), arguments[i]);
+    }
+    return str;
+}
+
 function getClassName(obj) {
     if (obj && obj.constructor && obj.constructor.toString()) {
         if (obj.constructor.name) {
@@ -168,6 +180,6 @@ function getEmitValueSetCTXBody(ctx, arr) {
 }
 
 module.exports = {
-    isObject, isArray, isClass, isFunction, isString, clone, arrDelete, arrAdd, toBool, toObject, getClassName, getClassFuncName,
+    isObject, isArray, isClass, isFunction, isString, clone, arrDelete, arrAdd, toBool, toObject, getClassName, getClassFuncName, formatReplace,
     getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody,
 }

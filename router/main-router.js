@@ -4,7 +4,7 @@ const appdir = require2('tomjs/handlers/dir')();
 const Validator = require(path.join(appdir, './validator/validator.js'));//通过调用用户定义的validator，方便用户添加自定义验证码规则
 const BaseApiError = require2('tomjs/error/base_api_error');
 const KoaRouter = require2('koa-router');
-const { isObject, isArray, ObjtoArray, toBool } = require2('tomjs/handlers/tools');
+const { isObject, isArray, ObjToArray, toBool } = require2('tomjs/handlers/tools');
 const ratelimit = require2('tomjs/middleware/ratelimit');
 const auth_cfg = require2('tomjs/configs')().auth;
 const router_jwt = require2('tomjs/auth/router_jwt');
@@ -21,7 +21,7 @@ async function router_func(controller_obj, func_name, rules, ctx) {
 
         //如果定义了相关参数验证规则，就对参数进行验证
         if (typeof (rules) == 'function') {
-            Rules = await rules(ctx, ...ObjtoArray(ctx.params));
+            Rules = await rules(ctx, ...ObjToArray(ctx.params));
         } else {
             Rules = rules;
         }
@@ -47,7 +47,7 @@ async function router_func(controller_obj, func_name, rules, ctx) {
             throw new BaseApiError(BaseApiError.VALIDATOR_ERROR, validator.errors)
         }
     }
-    await controller_obj[func_name](ctx, ...ObjtoArray(ctx.params))
+    await controller_obj[func_name](ctx, ...ObjToArray(ctx.params))
 }
 
 let Object_Arr = {};
