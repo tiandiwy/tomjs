@@ -31,10 +31,8 @@ class BaseLogin extends BaseUser {
     }
 
     async login(ctx, name_fields) {
-        if (auth_cfg.login_captcha) {
-            if (ctx.request.body[auth_cfg.captcha_key_field]) { delete ctx.request.body[auth_cfg.captcha_key_field]; }
-            if (ctx.request.body[auth_cfg.login_captcha_field]) { delete ctx.request.body[auth_cfg.login_captcha_field]; }
-        }
+        if (ctx.request.body[auth_cfg.captcha_key_field]) { delete ctx.request.body[auth_cfg.captcha_key_field]; }
+        if (ctx.request.body[auth_cfg.login_captcha_field]) { delete ctx.request.body[auth_cfg.login_captcha_field]; }
         if (!name_fields) {
             name_fields = auth_cfg.login_username_fields;
         }
