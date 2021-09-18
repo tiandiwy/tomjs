@@ -404,7 +404,7 @@ module.exports = function (inmongoose) {
             if (isObject(RE.match)) {
                 this._conditions = Object.assign(this._conditions || {}, RE.match);
                 if (isObject(this[models_cfg.pagination.pagination_info]) && isObject(this.$tomjs_pagination_info)) {
-                    await paginate(this, this[models_cfg.pagination.pagination_info], this.$tomjs_pagination_info.page_or_ctx, this.$tomjs_pagination_info.limit);
+                    await paginate(this, this[models_cfg.pagination.pagination_info].page, this[models_cfg.pagination.pagination_info].limit);
                 }
             }
             if (isObject(RE.select)) {
