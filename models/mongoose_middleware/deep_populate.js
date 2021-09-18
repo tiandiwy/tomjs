@@ -351,6 +351,44 @@ module.exports = function (inmongoose) {
         if (next) { return next(); }
     }
 
+    async function paginate($this, page_or_ctx, limit) {
+        let page = 0;
+        if (isObject(page_or_ctx) && isObject(page_or_ctx[models_cfg.pagination.ctx_field])) {
+            if (page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pageindex]) {
+                page = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pageindex]);
+            }
+            if ((limit === null || limit === undefined)
+                && page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pagesize]
+            ) { limit = parseInt(page_or_ctx[models_cfg.pagination.ctx_field][models_cfg.pagination.pagesize]); }
+        }
+        else { page = parseInt(page_or_ctx); }
+        if (isNaN(limit)) {
+            limit = models_cfg.pagination.pagesize_default;
+            limit = isNaN(limit) ? 10 : limit;
+        }
+        const limit_min = models_cfg.pagination.pagesize_min;
+        if (!isNaN(limit_min)) {
+            limit = limit < limit_min ? limit_min : limit;
+        }
+        const limit_max = models_cfg.pagination.pagesize_max;
+        if (!isNaN(limit_max)) {
+            limit = limit >= limit_max ? limit_max : limit;
+        }
+        if (limit < 1) { limit = 1; }
+        page = isNaN(page) ? 0 : page;
+        page = page < 1 ? 1 : page;
+        let query = $this;
+        const model = $this.model;
+        const total = await model.countDocuments(query._conditions);
+        const max_page = parseInt(total / limit, 10) + (total % limit == 0 ? 0 : 1);
+
+
+        const skipFrom = (page * limit) - limit;
+
+        query = query.skip(skipFrom).limit(limit);
+        $this[models_cfg.pagination.pagination_info] = { page, max_page, limit, total };
+    };
+
     async function runDeepPopulate(next) {
         let RE = undefined;
         if (this._deepPopulatePaths && this._deepPopulatePaths_End === undefined) {
@@ -363,7 +401,12 @@ module.exports = function (inmongoose) {
             this._deepPopulatePaths_End.re = RE;
             this._deepPopulatePaths_End.options = this._deepPopulatePaths.options;
             delete this._deepPopulatePaths;
-            if (isObject(RE.match)) { this._conditions = Object.assign(this._conditions || {}, RE.match); }
+            if (isObject(RE.match)) {
+                this._conditions = Object.assign(this._conditions || {}, RE.match);
+                if (isObject(this[models_cfg.pagination.pagination_info]) && isObject(this.$tomjs_pagination_info)) {
+                    await paginate(this, this[models_cfg.pagination.pagination_info], this.$tomjs_pagination_info.page_or_ctx, this.$tomjs_pagination_info.limit);
+                }
+            }
             if (isObject(RE.select)) {
                 for (let idx in RE.select) {
                     RE.select[idx] = RE.select[idx] <= 0 ? 0 : 1;
@@ -465,7 +508,7 @@ module.exports = function (inmongoose) {
     }
 
     function must_check(value, Paths) {
-        if (value===null && Paths.$must) { return undefined; }
+        if (value === null && Paths.$must) { return undefined; }
         if (value) {
             for (const key in Paths) {
                 if (isObject(Paths[key]) && key[0] != '$') {

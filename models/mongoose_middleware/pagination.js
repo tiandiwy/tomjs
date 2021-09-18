@@ -50,6 +50,7 @@ module.exports = function (mongoose) {
 
             query = query.skip(skipFrom).limit(limit);
             this[models_cfg.pagination.pagination_info] = { page, max_page, limit, total };
+            this.$tomjs_pagination_info = { page_or_ctx, limit };
             return this;
         };
     };
