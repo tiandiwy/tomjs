@@ -2,7 +2,7 @@ const require2 = require('tomjs/handlers/require2');
 const auth_cfg = require2('tomjs/configs')().auth;
 const system_cfg = require2('tomjs/configs')().system;
 const session_cfg = require2('tomjs/configs')().session;
-const { isObject } = require2('tomjs/handlers/tools');
+const { isObject, isString } = require2('tomjs/handlers/tools');
 const build_token = require2('tomjs/handlers/build_token');
 const path = require2('path');
 const appdir = require2('tomjs/handlers/dir')();
@@ -79,7 +79,7 @@ class BaseUser extends BaseController {
         if (isObject(user_obj)) {
             Object.assign(user_token_obj, user_obj);
         }
-        if (typeof (user.language) && (user.language.length > 0)) { ctx.session[session_cfg.language_key] = user.language; }
+        if (isString(user.language) && (user.language.length > 0)) { ctx.session[session_cfg.language_key] = user.language; }
         return build_token(ctx, user_token_obj, long);
     }
 
