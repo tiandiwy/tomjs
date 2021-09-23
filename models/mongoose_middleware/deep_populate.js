@@ -508,13 +508,13 @@ module.exports = function (inmongoose) {
     }
 
     function must_check(value, Paths) {
-        if (value === null && Paths.$must) { return undefined; }
+        if (value === null && Paths.$must) { return Symbol.for('$no_must'); }
         if (value) {
             for (const key in Paths) {
                 if (isObject(Paths[key]) && key[0] != '$') {
                     const populate = Paths[key];
                     if (!isArray(value[key])) {
-                        if (must_check(value[key], populate) === undefined) {
+                        if (must_check(value[key], populate) === Symbol.for('$no_must')) {
                             return undefined;
                         }
                     }
@@ -523,13 +523,13 @@ module.exports = function (inmongoose) {
                         let have = false;
                         for (let index = 0; index < len; index++) {
                             const one = value[key][index];
-                            if (must_check(one, populate) !== undefined) {
+                            if (must_check(one, populate) !== Symbol.for('$no_must')) {
                                 have = true;
                                 break;
                             }
                         }
                         if (!have && Paths[key].$must) {
-                            return undefined;
+                            return Symbol.for('$no_must');
                         }
                     }
                 }
