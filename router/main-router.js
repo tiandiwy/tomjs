@@ -12,7 +12,7 @@ const router_jwt_check = require2('tomjs/auth/router_jwt_check');
 
 async function router_func(controller_obj, func_name, rules, ctx) {
     //合并params与query参数
-    let all_params = Object.assign({}, ctx.query, ctx.request.body, ctx.params);
+    let all_params = isObject(ctx.all_params)? ctx.all_params : Object.assign({}, ctx.query, ctx.request.body, ctx.params);
 
     if (rules !== undefined) {
         let Rules = undefined;
