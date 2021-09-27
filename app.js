@@ -83,6 +83,10 @@ async function startRun() {
         }
     }
     app.use(subdomain_static.routes());
+    if (isObject(configs.history_api) && configs.history_api.open) {
+        const { historyApiFallback } = require('koa2-connect-history-api-fallback');
+        app.use(historyApiFallback(isObject(configs.history_api.options) ? configs.history_api.options : undefined));
+    }
     app.use(render)
         .use(response_formatter())
         .use(options());
