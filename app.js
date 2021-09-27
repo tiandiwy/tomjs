@@ -114,6 +114,10 @@ async function startRun() {
         }
     }
     app.use(subdomain.routes());
+    if (isObject(configs.history_api) && configs.history_api.open) {
+        const { historyApiFallback } = require2('koa2-connect-history-api-fallback');
+        app.use(historyApiFallback(configs.history_api.options ? configs.history_api.options : undefined))
+    }
     app.use(ErrorRouter());
 
     app.on("error", async (error, ctx) => { //捕获异常记录错误日志        

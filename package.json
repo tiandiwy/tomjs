@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.9.88",
+  "version": "0.9.89",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {
@@ -47,6 +47,7 @@
     "koa-views": "^6.3.0",
     "koa-views-render": "0.0.1",
     "koa-websocket": "^6.0.0",
+    "koa2-connect-history-api-fallback": "^0.1.3",
     "lodash": "^4.17.19",
     "log4js": "^4.5.1",
     "mongoose": "^5.11.17",
