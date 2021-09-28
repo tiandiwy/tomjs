@@ -4,7 +4,7 @@ const { join, extname } = require2('path');
 const pluralize = require2('pluralize');
 const _ = require2('lodash');
 const appDir = require2('tomjs/handlers/dir')();
-const { isArray, isObject, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
+const { isArray, isObject, isFunction, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
 const jsonTemplate = require2('tomjs/handlers/json_templater');
 const LoadClass = require2('tomjs/handlers/load_class');
 const models_cfg = require2('tomjs/configs')().models;
@@ -87,10 +87,14 @@ module.exports = function (inmongoose) {
 
         if (deep === 0) {
             let req = {}
+            let __user_id__ = { $type: "undefined" };
             if (typeof (paths) == "object") {
                 try {
                     if (paths.app && paths.app.constructor && paths.app.constructor.name == "Application") {
                         try {
+                            if (isObject(paths.auth) && isFunction(paths.auth.id) && paths.auth.id()) {
+                                __user_id__ = paths.auth.id();
+                            }
                             req = Object.assign({}, paths.request.query ? paths.request.query : {}, paths.request.body ? paths.request.body : {});
                             if (req[models_cfg.pql.ctx_body_query_field]) {
                                 paths = req[models_cfg.pql.ctx_body_query_field];
@@ -115,9 +119,9 @@ module.exports = function (inmongoose) {
                         if (extname(paths.trim()).length < 1) {
                             paths += '.pql';
                         }
-                        let template = await readFile(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
-                        let locals = req[models_cfg.pql.ctx_body_pql_file_values_field] ? JSON.parse(req[models_cfg.pql.ctx_body_pql_file_values_field]) : {};
-                        paths = JSON.parse(jsonTemplate(template, Object.assign({}, options.locals, locals)));
+                        const template = await readFile(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
+                        const locals = req[models_cfg.pql.ctx_body_pql_file_values_field] ? JSON.parse(req[models_cfg.pql.ctx_body_pql_file_values_field]) : {};
+                        paths = JSON.parse(jsonTemplate(template, Object.assign({ __user_id__ }, options.locals, locals)));
                         options.is_guard = false;
                         options.is_pql_file = true;
                     } catch (err) {
