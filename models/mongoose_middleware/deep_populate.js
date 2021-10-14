@@ -5,6 +5,7 @@ const pluralize = require2('pluralize');
 const _ = require2('lodash');
 const appDir = require2('tomjs/handlers/dir')();
 const { isArray, isObject, isFunction, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
+const pqlFiles = require2('tomjs/handlers/files');
 const jsonTemplate = require2('tomjs/handlers/json_templater');
 const LoadClass = require2('tomjs/handlers/load_class');
 const models_cfg = require2('tomjs/configs')().models;
@@ -20,7 +21,6 @@ function myObjectAssign(target, source) {
 
     return Object.assign(target, source, tempObj);
 }
-
 
 function PopulateOptions(path, select, match, options, model, subPopulate, justOne) {
     this.path = path;
@@ -119,7 +119,8 @@ module.exports = function (inmongoose) {
                         if (extname(paths.trim()).length < 1) {
                             paths += '.pql';
                         }
-                        const template = await readFile(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
+                        // const template = await readFile(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
+                        const template = await pqlFiles(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
                         const locals = req[models_cfg.pql.ctx_body_pql_file_values_field] ? JSON.parse(req[models_cfg.pql.ctx_body_pql_file_values_field]) : {};
                         paths = JSON.parse(jsonTemplate(template, Object.assign({ __user_id__ }, options.locals, locals)));
                         options.is_guard = false;
