@@ -18,6 +18,17 @@ function isString(func) {
     return typeof (func) == "string";
 }
 
+function isNumber(val) {
+    if (typeof val !== 'number') {
+        return false;
+    }
+    if (!isNaN(val)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 function clone(obj) {
     return Object.create(
         Object.getPrototypeOf(obj),
@@ -180,6 +191,6 @@ function getEmitValueSetCTXBody(ctx, arr) {
 }
 
 module.exports = {
-    isObject, isArray, isClass, isFunction, isString, clone, arrDelete, arrAdd, toBool, toObject, getClassName, getClassFuncName, formatReplace,
+    isObject, isArray, isClass, isFunction, isString, isNumber, clone, arrDelete, arrAdd, toBool, toObject, getClassName, getClassFuncName, formatReplace,
     getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody,
 }

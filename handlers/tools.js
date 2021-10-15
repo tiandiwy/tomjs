@@ -5,13 +5,14 @@ const humps = require2('humps');
 const _ = require2('lodash');
 const system_cfg = require2('tomjs/configs')().system;
 const models_cfg = require2('tomjs/configs')().models;
-const { isObject, isArray, isClass, isFunction, isString, clone, arrDelete, arrAdd, toBool, formatReplace, getClassName, getClassFuncName,
+const { isObject, isArray, isClass, isFunction, isString, isNumber, clone, arrDelete, arrAdd, toBool, formatReplace, getClassName, getClassFuncName,
     getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody } = require2('tomjs/handlers/base_tools');
 exports.isObject = isObject;
 exports.isArray = isArray;
 exports.isClass = isClass;
 exports.isFunction = isFunction;
 exports.isString = isString;
+exports.isNumber = isNumber;
 exports.clone = clone;
 exports.arrDelete = arrDelete;
 exports.arrAdd = arrAdd;

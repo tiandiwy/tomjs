@@ -4,7 +4,7 @@ const { join, extname } = require2('path');
 const pluralize = require2('pluralize');
 const _ = require2('lodash');
 const appDir = require2('tomjs/handlers/dir')();
-const { isArray, isObject, isFunction, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
+const { isArray, isObject, isFunction, isNumber, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
 const pqlFiles = require2('tomjs/handlers/files');
 const jsonTemplate = require2('tomjs/handlers/json_templater');
 const LoadClass = require2('tomjs/handlers/load_class');
@@ -120,7 +120,8 @@ module.exports = function (inmongoose) {
                             paths += '.pql';
                         }
                         // const template = await readFile(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
-                        const template = await pqlFiles(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
+                        const template = models_cfg.pql.pql_file_in_memory ? await pqlFiles(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8')
+                            : await readFile(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
                         const locals = req[models_cfg.pql.ctx_body_pql_file_values_field] ? JSON.parse(req[models_cfg.pql.ctx_body_pql_file_values_field]) : {};
                         paths = JSON.parse(jsonTemplate(template, Object.assign({ __user_id__ }, options.locals, locals)));
                         options.is_guard = false;
@@ -512,45 +513,105 @@ module.exports = function (inmongoose) {
         }
     }
 
+    function NumberIsOK(object, number) {
+        if (!isObject(object)) { return false; }
+        number = parseInt(number, 10);
+        let re = "";
+        for (const key in object) {
+            const element = parseInt(object[key], 10);
+            switch (key) {
+                case '$eq': {
+                    re = number == element;
+                    break;
+                }
+                case '$ne': {
+                    re = number != element;
+                    break;
+                }
+                case '$gt': {
+                    re = number > element;
+                    break;
+                }
+                case '$gte': {
+                    re = number >= element;
+                    break;
+                }
+                case '$lt': {
+                    re = number < element;
+                    break;
+                }
+                case '$lte': {
+                    re = number <= element;
+                    break;
+                }
+                default:
+                    re = false;
+                    break;
+            }
+            if (!re) { return false; }
+        }
+        return re;
+    }
     function must_check(value, Paths) {
-        if (value === null && Paths.$must) { return Symbol.for('$no_must'); }
+        if (Paths.$must === true || Paths.$must === false || isNumber(Paths.$must) || isObject(Paths.$must) || isArray(Paths.$must)) {
+            if (isArray(value)) {
+                const len = value.length;
+                for (let index = len - 1; index >= 0; index--) {
+                    if (value[index] === null || value[index] === undefined || value[index] === Symbol.for('$no_must')) {
+                        value.splice(index, 1);
+                    }
+                }
+            }
+            if (Paths.$must === false && Paths.$must === 0 && value !== null && value !== undefined && (isArray(value) && value.length > 0)) {
+                return Symbol.for('$no_must');
+            }
+            if (Paths.$must === true && value === null && (isArray(value) && value.length < 1)) {
+                return Symbol.for('$no_must');
+            }
+            if (isNumber(Paths.$must) && Paths.$must > 0) {
+                if (Paths.$must === 1 && (value === null || value === undefined || (isArray(value) && value.length != 1))) {
+                    return Symbol.for('$no_must');
+                }
+                else if (!isArray(value) || (isArray(value) && value.length != Paths.$must)) {
+                    return Symbol.for('$no_must');
+                }
+            }
+            if (isObject(Paths.$must)) {
+                const len = isArray(value) ? value.length : 0;
+                if (!NumberIsOK(Paths.$must, len)) {
+                    return Symbol.for('$no_must');
+                }
+            }
+            if (isArray(Paths.$must)) {
+                const len = isArray(value) ? value.length : 0;
+                for (let index = 0; index < Paths.$must.length; index++) {
+                    if (!NumberIsOK(Paths.$must[index], len)) {
+                        return Symbol.for('$no_must');
+                    }
+                }
+            }
+        }
         if (value) {
             for (const key in Paths) {
                 if (isObject(Paths[key]) && key[0] != '$') {
                     const populate = Paths[key];
-                    if (!isArray(value[key])) {
-                        if (must_check(value[key], populate) === Symbol.for('$no_must')) {
-                            return undefined;
-                        }
-                    }
-                    else {
-                        const len = value[key].length;
-                        let have = false;
-                        for (let index = 0; index < len; index++) {
-                            const one = value[key][index];
-                            if (must_check(one, populate) !== Symbol.for('$no_must')) {
-                                have = true;
-                                break;
-                            }
-                        }
-                        if (!have && Paths[key].$must) {
-                            return Symbol.for('$no_must');
-                        }
+                    if (must_check(value[key], populate) === Symbol.for('$no_must')) {
+                        return undefined;
                     }
                 }
             }
         }
         return value;
     }
-
     function getValues(values, EndRE, hideFields) {
         if (isObject(values) && typeof (values.toJSON) == "function") {
             let value = values.toJSON();
             field_check(EndRE, value);
             if (isObject(hideFields)) { value = valuesHideFields(hideFields, value); }
-            return must_check(value, EndRE.oldPaths);
+            let re = must_check(value, EndRE.oldPaths);
+            if (re === Symbol.for('$no_must')) { re = undefined; }
+            return re;
         } else if (isArray(values)) {
-            let nullCount = 0;
             let len = values.length;
             let one = undefined;
             let all = [];
@@ -561,10 +622,7 @@ module.exports = function (inmongoose) {
                     field_check(EndRE, value);
                     if (isObject(hideFields)) { value = valuesHideFields(hideFields, value); }
                     const val = must_check(value, EndRE.oldPaths);
-                    if (val !== undefined) { all.push(val); }
-                    else {
-                        nullCount++;
-                    }
+                    if (val !== undefined && val !== Symbol.for('$no_must')) { all.push(val); }
                 }
             }
             let re = undefined;
