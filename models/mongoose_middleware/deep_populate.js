@@ -567,7 +567,7 @@ module.exports = function (inmongoose) {
             if (Paths.$must === false && Paths.$must === 0 && value !== null && value !== undefined && (isArray(value) && value.length > 0)) {
                 return Symbol.for('$no_must');
             }
-            if (Paths.$must === true && value === null && (isArray(value) && value.length < 1)) {
+            if (Paths.$must === true && (value === null || (isArray(value) && value.length < 1))) {
                 return Symbol.for('$no_must');
             }
             if (isNumber(Paths.$must) && Paths.$must > 0) {
