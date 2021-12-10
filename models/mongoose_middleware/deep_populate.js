@@ -90,12 +90,14 @@ module.exports = function (inmongoose) {
             let __user_id__ = { $type: "undefined" };
             let __now__ = new Date();
             let __now_timestamp__ = +new Date();
+            let __user__ = null;
             if (typeof (paths) == "object") {
                 try {
                     if (paths.app && paths.app.constructor && paths.app.constructor.name == "Application") {
                         try {
                             if (isObject(paths.auth) && isFunction(paths.auth.id) && paths.auth.id()) {
                                 __user_id__ = paths.auth.id();
+                                __user__ = await paths.auth.user();
                             }
                             req = Object.assign({}, paths.request.query ? paths.request.query : {}, paths.request.body ? paths.request.body : {});
                             if (req[models_cfg.pql.ctx_body_query_field]) {
@@ -125,7 +127,7 @@ module.exports = function (inmongoose) {
                         const template = models_cfg.pql.pql_file_in_memory ? await pqlFiles(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8')
                             : await readFile(join(appDir, '..', models_cfg.pql.pql_public_path, paths), 'utf8');
                         const locals = req[models_cfg.pql.ctx_body_pql_file_values_field] ? JSON.parse(req[models_cfg.pql.ctx_body_pql_file_values_field]) : {};
-                        paths = JSON.parse(jsonTemplate(template, Object.assign({ __user_id__, __now__, __now_timestamp__ }, options.locals, locals)));
+                        paths = JSON.parse(jsonTemplate(template, Object.assign({ __user_id__, __user__, __now__, __now_timestamp__ }, options.locals, locals)));
                         options.is_guard = false;
                         options.is_pql_file = true;
                     } catch (err) {
