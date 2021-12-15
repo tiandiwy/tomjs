@@ -20,6 +20,8 @@ Convert a dotted path to a location inside an object.
 @param {String} path dotted to indicate levels in an object.
 @param {Object} view for the data.
 */
+
+const DB_BEGIN = "__DB__";
 function extractValue(path, view, safe = true) {
     path = path.trim();
     // Short circuit for direct matches.
@@ -39,8 +41,12 @@ function extractValue(path, view, safe = true) {
             undefined;
     }
 
+    if (view === undefined && path.startsWith(DB_BEGIN)) {
+        view = "{{ " + path + " }}";
+    }
+
     return safe ? JSON.stringify(view, null, 2).replace(/\//g, '\\/')
-    .replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029") : view;
+        .replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029") : view;
 }
 
 var REGEX = new RegExp('{{(\\s*?[a-zA-Z.-_0-9]+\\s*?)}}', 'g');
@@ -59,7 +65,7 @@ function replace(input, view) {
     // optimization to avoid regex calls (indexOf is strictly faster)
     if (input.indexOf(TEMPLATE_OPEN) === -1 && input.indexOf(TEMPLATE_OPEN2) === -1) return input;
     var result;
-    var replaced = input.replace(REGEX, function(original, path) {
+    var replaced = input.replace(REGEX, function (original, path) {
         var value = extractValue(path, view);
         if (undefined === value || null === value) {
             return original;
@@ -72,7 +78,7 @@ function replace(input, view) {
 
         return value;
     });
-    replaced = replaced.replace(REGEX2, function(original, path) {
+    replaced = replaced.replace(REGEX2, function (original, path) {
         var value = extractValue(path, view, false);
         if (undefined === value || null === value) {
             return original;

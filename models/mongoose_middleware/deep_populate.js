@@ -4,12 +4,23 @@ const { join, extname } = require2('path');
 const pluralize = require2('pluralize');
 const _ = require2('lodash');
 const appDir = require2('tomjs/handlers/dir')();
-const { isArray, isObject, isFunction, isNumber, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
+const { isArray, isObject, isFunction, isNumber, isString, select_fields, selectMustHave, readFile, valuesHideFields } = require2('tomjs/handlers/tools');
 const pqlFiles = require2('tomjs/handlers/files');
 const jsonTemplate = require2('tomjs/handlers/json_templater');
 const LoadClass = require2('tomjs/handlers/load_class');
 const models_cfg = require2('tomjs/configs')().models;
 const BaseApiError = require2('tomjs/error/base_api_error');
+
+
+const TEMPLATE_OPEN = '{{';
+const TEMPLATE_END = '}}';
+const REG_TEMPLATE_OPEN = new RegExp('"' + TEMPLATE_OPEN);
+const REG_TEMPLATE_END = new RegExp(TEMPLATE_END + '"');
+const TEMPLATE_OPEN2 = '{!';
+const TEMPLATE_END2 = '!}'
+const REG_TEMPLATE_OPEN2 = new RegExp('"' + TEMPLATE_OPEN2);
+const REG_TEMPLATE_END2 = new RegExp(TEMPLATE_END2 + '"');
+
 
 function myObjectAssign(target, source) {
     let tempObj = {};
@@ -557,6 +568,28 @@ module.exports = function (inmongoose) {
         return re;
     }
     function must_check(value, Paths) {
+        let boObjFind = false;
+        if (isObject(Paths.$must)) {
+            //判断对象中是否有未解析的变量
+            let input = JSON.stringify(Paths.$must);
+            if (input.indexOf(TEMPLATE_OPEN) !== -1) {
+                boObjFind = true;
+                input = input.replace(REG_TEMPLATE_OPEN, TEMPLATE_OPEN).replace(REG_TEMPLATE_END, TEMPLATE_END);
+            }
+            else if (input.indexOf(TEMPLATE_OPEN2) !== -1) {
+                boObjFind = true;
+                input = input.replace(REG_TEMPLATE_OPEN2, TEMPLATE_OPEN2).replace(REG_TEMPLATE_END2, TEMPLATE_END2);
+            }
+            if (boObjFind) {
+                Paths.$must = input;
+            }
+        }
+        if (isString(Paths.$must)) {
+            Paths.$must = JSON.parse(jsonTemplate(Paths.$must, { __DB__: value }));
+            if (Paths.$must === "true") { Paths.$must = true; }
+            else if (Paths.$must === "false") { Paths.$must = false; }
+            else if (isString(Paths.$must)) { Paths.$must = parseInt(Paths.$must, 10); }
+        }
         if (Paths.$must === true || Paths.$must === false || isNumber(Paths.$must) || isObject(Paths.$must) || isArray(Paths.$must)) {
             if (isArray(value)) {
                 const len = value.length;
