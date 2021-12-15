@@ -567,11 +567,11 @@ module.exports = function (inmongoose) {
         }
         return re;
     }
-    function must_check(value, Paths) {
-        let boObjFind = false;
+    function must_check(value, Paths, __DB__) {
         if (isObject(Paths.$must)) {
             //判断对象中是否有未解析的变量
             let input = JSON.stringify(Paths.$must);
+            let boObjFind = false;
             if (input.indexOf(TEMPLATE_OPEN) !== -1) {
                 boObjFind = true;
                 input = input.replace(REG_TEMPLATE_OPEN, TEMPLATE_OPEN).replace(REG_TEMPLATE_END, TEMPLATE_END);
@@ -585,7 +585,7 @@ module.exports = function (inmongoose) {
             }
         }
         if (isString(Paths.$must)) {
-            Paths.$must = JSON.parse(jsonTemplate(Paths.$must, { __DB__: value }));
+            Paths.$must = JSON.parse(jsonTemplate(Paths.$must, { __DB__ }));
             if (Paths.$must === "true") { Paths.$must = true; }
             else if (Paths.$must === "false") { Paths.$must = false; }
             else if (isString(Paths.$must)) { Paths.$must = parseInt(Paths.$must, 10); }
@@ -632,7 +632,7 @@ module.exports = function (inmongoose) {
             for (const key in Paths) {
                 if (isObject(Paths[key]) && key[0] != '$') {
                     const populate = Paths[key];
-                    if (must_check(value[key], populate) === Symbol.for('$no_must')) {
+                    if (must_check(value[key], populate, __DB__) === Symbol.for('$no_must')) {
                         return undefined;
                     }
                 }
@@ -645,7 +645,7 @@ module.exports = function (inmongoose) {
             let value = values.toJSON();
             field_check(EndRE, value);
             if (isObject(hideFields)) { value = valuesHideFields(hideFields, value); }
-            let re = must_check(value, EndRE.oldPaths);
+            let re = must_check(value, EndRE.oldPaths, value);
             if (re === Symbol.for('$no_must')) { re = undefined; }
             return re;
         } else if (isArray(values)) {
@@ -658,7 +658,7 @@ module.exports = function (inmongoose) {
                     let value = one.toJSON();
                     field_check(EndRE, value);
                     if (isObject(hideFields)) { value = valuesHideFields(hideFields, value); }
-                    const val = must_check(value, EndRE.oldPaths);
+                    const val = must_check(value, EndRE.oldPaths, value);
                     if (val !== undefined && val !== Symbol.for('$no_must')) { all.push(val); }
                 }
             }
