@@ -14,12 +14,12 @@ const BaseApiError = require2('tomjs/error/base_api_error');
 
 const TEMPLATE_OPEN = '{{';
 const TEMPLATE_END = '}}';
-const REG_TEMPLATE_OPEN = new RegExp('"' + TEMPLATE_OPEN);
-const REG_TEMPLATE_END = new RegExp(TEMPLATE_END + '"');
+const REG_TEMPLATE_OPEN = new RegExp('"' + TEMPLATE_OPEN, 'g');
+const REG_TEMPLATE_END = new RegExp(TEMPLATE_END + '"', 'g');
 const TEMPLATE_OPEN2 = '{!';
 const TEMPLATE_END2 = '!}'
-const REG_TEMPLATE_OPEN2 = new RegExp('"' + TEMPLATE_OPEN2);
-const REG_TEMPLATE_END2 = new RegExp(TEMPLATE_END2 + '"');
+const REG_TEMPLATE_OPEN2 = new RegExp('"' + TEMPLATE_OPEN2, 'g');
+const REG_TEMPLATE_END2 = new RegExp(TEMPLATE_END2 + '"', 'g');
 
 
 function myObjectAssign(target, source) {
@@ -567,7 +567,7 @@ module.exports = function (inmongoose) {
         }
         return re;
     }
-    function must_check(value, Paths, __DB__) {
+    function must_check(value, Paths, __DB_TOP__, __DB_PRE__) {
         if (isObject(Paths.$must)) {
             //判断对象中是否有未解析的变量
             let input = JSON.stringify(Paths.$must);
@@ -585,7 +585,7 @@ module.exports = function (inmongoose) {
             }
         }
         if (isString(Paths.$must)) {
-            Paths.$must = JSON.parse(jsonTemplate(Paths.$must, { __DB__ }));
+            Paths.$must = JSON.parse(jsonTemplate(Paths.$must, { __DB_TOP__, __DB_PRE__, __DB__: (isArray(value) && value.length > 0) ? value[0] : {} }));
             if (Paths.$must === "true") { Paths.$must = true; }
             else if (Paths.$must === "false") { Paths.$must = false; }
             else if (isString(Paths.$must)) { Paths.$must = parseInt(Paths.$must, 10); }
@@ -632,7 +632,7 @@ module.exports = function (inmongoose) {
             for (const key in Paths) {
                 if (isObject(Paths[key]) && key[0] != '$') {
                     const populate = Paths[key];
-                    if (must_check(value[key], populate, __DB__) === Symbol.for('$no_must')) {
+                    if (must_check(value[key], populate, __DB_TOP__, value) === Symbol.for('$no_must')) {
                         return undefined;
                     }
                 }
@@ -644,8 +644,9 @@ module.exports = function (inmongoose) {
         if (isObject(values) && typeof (values.toJSON) == "function") {
             let value = values.toJSON();
             field_check(EndRE, value);
+            const __DB_TOP__ = JSON.parse(JSON.stringify(value));
             if (isObject(hideFields)) { value = valuesHideFields(hideFields, value); }
-            let re = must_check(value, EndRE.oldPaths, value);
+            let re = must_check(value, EndRE.oldPaths, __DB_TOP__, __DB_TOP__);
             if (re === Symbol.for('$no_must')) { re = undefined; }
             return re;
         } else if (isArray(values)) {
@@ -657,8 +658,9 @@ module.exports = function (inmongoose) {
                 if (isObject(one) && typeof (one.toJSON) == "function") {
                     let value = one.toJSON();
                     field_check(EndRE, value);
+                    const __DB_TOP__ = JSON.parse(JSON.stringify(value));
                     if (isObject(hideFields)) { value = valuesHideFields(hideFields, value); }
-                    const val = must_check(value, EndRE.oldPaths, value);
+                    const val = must_check(value, EndRE.oldPaths, __DB_TOP__, __DB_TOP__);
                     if (val !== undefined && val !== Symbol.for('$no_must')) { all.push(val); }
                 }
             }

@@ -21,6 +21,8 @@ Convert a dotted path to a location inside an object.
 @param {Object} view for the data.
 */
 
+const DB_TOP_BEGIN = "__DB_TOP__";
+const DB_PRE_BEGIN = "__DB_PRE__";
 const DB_BEGIN = "__DB__";
 function extractValue(path, view, safe = true) {
     path = path.trim();
@@ -41,7 +43,7 @@ function extractValue(path, view, safe = true) {
             undefined;
     }
 
-    if (view === undefined && path.startsWith(DB_BEGIN)) {
+    if (view === undefined && (path.startsWith(DB_TOP_BEGIN) || path.startsWith(DB_PRE_BEGIN) || path.startsWith(DB_BEGIN))) {
         view = "{{ " + path + " }}";
     }
 
