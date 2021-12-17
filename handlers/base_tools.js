@@ -79,14 +79,14 @@ function toObject(val) {
     return val;
 }
 
- function formatReplace(str) {
+function formatReplace(str) {
     const arguments_count = arguments.length;
     if (arguments.length == 1) {
         return str;
     }
 
     for (let i = 1; i < arguments_count; i++) {
-        str = str.replace(new RegExp("\\{" + (i-1) + "\\}", "g"), arguments[i]);
+        str = str.replace(new RegExp("\\{" + (i - 1) + "\\}", "g"), arguments[i]);
     }
     return str;
 }
@@ -118,6 +118,23 @@ function getClassFuncName(regx = /\)[\w\W]*?at ([\w.]+) \(/g) {
         callerName = m[1] || m[2];
     }
     return callerName;
+}
+
+function getFuncParamNames(fn) {
+    let result = [];
+    if (typeof fn === 'object' || typeof fn === 'function'){
+        const COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+        const DEFAULT_PARAMS = /=[^,)]+/mg;
+        const FAT_ARROWS = /=>.*$/mg;
+        let code = fn.prototype ? fn.prototype.constructor.toString() : fn.toString();
+        code = code
+            .replace(COMMENTS, '')
+            .replace(FAT_ARROWS, '')
+            .replace(DEFAULT_PARAMS, '');
+        result = code.slice(code.indexOf('(') + 1, code.indexOf(')')).match(/([^\s,]+)/g);    
+        result === null ? [] : result;
+    }
+    return result;
 }
 
 function getEmitFirstValue(arr) {
@@ -191,6 +208,6 @@ function getEmitValueSetCTXBody(ctx, arr) {
 }
 
 module.exports = {
-    isObject, isArray, isClass, isFunction, isString, isNumber, clone, arrDelete, arrAdd, toBool, toObject, getClassName, getClassFuncName, formatReplace,
+    isObject, isArray, isClass, isFunction, isString, isNumber, clone, arrDelete, arrAdd, toBool, toObject, getClassName, getClassFuncName, getFuncParamNames, formatReplace,
     getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody,
 }
