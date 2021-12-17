@@ -585,7 +585,7 @@ module.exports = function (inmongoose) {
             }
         }
         if (isString(Paths.$must)) {
-            Paths.$must = JSON.parse(jsonTemplate(Paths.$must, { __DB_TOP__, __DB_PRE__, __DB__: (isArray(value) && value.length > 0) ? value[0] : {} }));
+            Paths.$must = JSON.parse(jsonTemplate(Paths.$must, { __DB_TOP__, __DB_PRE__, __DB__: __DB_PRE__ }));
             if (Paths.$must === "true") { Paths.$must = true; }
             else if (Paths.$must === "false") { Paths.$must = false; }
             else if (isString(Paths.$must)) { Paths.$must = parseInt(Paths.$must, 10); }
