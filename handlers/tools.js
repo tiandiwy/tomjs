@@ -297,7 +297,7 @@ exports.getUrlDomain = function (defUrlDomain) {
         if (defUrlDomain.trimLeft().toLowerCase().startsWith('https://') || defUrlDomain.trimLeft().toLowerCase().startsWith('http://')) {
             url = defUrlDomain;
         }
-        else{
+        else {
             url = system_cfg.server_url_type + defUrlDomain;
             server_host = defUrlDomain;
         }
@@ -305,27 +305,27 @@ exports.getUrlDomain = function (defUrlDomain) {
     else if (defUrlDomain === false) {
         url = "";
     }
-    if ((str_port.length > 0 || (server_host.trim().toLowerCase() != 'localhost'))&& !isAllUrl && defUrlDomain !== false) {
+    if ((str_port.length > 0 || (server_host.trim().toLowerCase() != 'localhost')) && !isAllUrl && defUrlDomain !== false) {
         url = system_cfg.server_url_type + server_host + str_port;
     }
     return url;
 }
 
-exports.filterCTXQuery = function(ctx) {
+exports.filterCTXQuery = function (ctx) {
     let reObj = {};
     if (isObject(ctx.query)) {
         reObj = JSON.parse(JSON.stringify(ctx.query));
-        if (reObj[models_cfg.pql.ctx_body_query_field]) {
+        if (reObj[models_cfg.pql.ctx_body_query_field] !== undefined) {
             delete reObj[models_cfg.pql.ctx_body_query_field];
         }
-        if (reObj[models_cfg.pql.ctx_body_pql_file_values_field]) {
+        if (reObj[models_cfg.pql.ctx_body_pql_file_values_field] !== undefined) {
             delete reObj[models_cfg.pql.ctx_body_pql_file_values_field];
         }
         if (models_cfg.pagination.ctx_field == "query") {
-            if (reObj[models_cfg.pagination.pageindex]) {
+            if (reObj[models_cfg.pagination.pageindex] !== undefined) {
                 delete reObj[models_cfg.pagination.pageindex];
             }
-            if (reObj[models_cfg.pagination.pagesize]) {
+            if (reObj[models_cfg.pagination.pagesize] !== undefined) {
                 delete reObj[models_cfg.pagination.pagesize];
             }
         }
