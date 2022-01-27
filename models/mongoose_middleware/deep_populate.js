@@ -102,20 +102,28 @@ module.exports = function (inmongoose) {
             let __NOW__ = new Date();
             let __NOW_TIMESTAMP__ = +new Date();
             let __USER__ = null;
+            let ctx = null;
             if (typeof (paths) == "object") {
                 try {
                     if (paths.app && paths.app.constructor && paths.app.constructor.name == "Application") {
+                        ctx = paths;
                         try {
                             if (isObject(paths.auth) && isFunction(paths.auth.id) && paths.auth.id()) {
                                 __USER_ID__ = paths.auth.id();
                                 __USER__ = await paths.auth.user();
                             }
                             req = Object.assign({}, paths.request.query ? paths.request.query : {}, paths.request.body ? paths.request.body : {});
-                            if (req[models_cfg.pql.ctx_body_query_field]) {
-                                paths = req[models_cfg.pql.ctx_body_query_field];
+                            const pql_query = req[models_cfg.pql.ctx_body_query_field];
+                            if (isString(pql_query) ? pql_query.trim() : pql_query) {
+                                paths = pql_query;
                             }
                             else {
-                                paths = {};
+                                if (models_cfg.pql.auto_pql_file && isFunction(models_cfg.pql.auto_pql_file_function)) {
+                                    paths = await models_cfg.pql.auto_pql_file_function(ctx);
+                                }
+                                else {
+                                    paths = {};
+                                }
                             }
                         } catch (error) { paths = {}; }
                     }
