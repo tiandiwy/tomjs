@@ -6,7 +6,7 @@ const _ = require2('lodash');
 const system_cfg = require2('tomjs/configs')().system;
 const models_cfg = require2('tomjs/configs')().models;
 const { isObject, isArray, isClass, isFunction, isString, isNumber, clone, arrDelete, arrAdd, toBool, formatReplace, getClassName, getClassFuncName,
-    getFuncParamNames, getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody } = require2('tomjs/handlers/base_tools');
+    getFuncParamNames, getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody, mkdirs, mkdirsSync, } = require2('tomjs/handlers/base_tools');
 exports.isObject = isObject;
 exports.isArray = isArray;
 exports.isClass = isClass;
@@ -25,6 +25,8 @@ exports.getEmitValue = getEmitValue;
 exports.getEmitFirstValueSetCTXBody = getEmitFirstValueSetCTXBody;
 exports.getEmitValueSetCTXBody = getEmitValueSetCTXBody;
 exports.formatReplace = formatReplace;
+exports.mkdirs = mkdirs;
+exports.mkdirsSync = mkdirsSync;
 
 exports.ObjToArray = (obj) => {
     let arr = []

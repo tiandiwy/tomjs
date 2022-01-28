@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 function isObject(obj) {
     return (typeof (obj) == "object") && (!Array.isArray(obj) && obj !== null);
 }
@@ -122,7 +125,7 @@ function getClassFuncName(regx = /\)[\w\W]*?at ([\w.]+) \(/g) {
 
 function getFuncParamNames(fn) {
     let result = [];
-    if (typeof fn === 'object' || typeof fn === 'function'){
+    if (typeof fn === 'object' || typeof fn === 'function') {
         const COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
         const DEFAULT_PARAMS = /=[^,)]+/mg;
         const FAT_ARROWS = /=>.*$/mg;
@@ -131,7 +134,7 @@ function getFuncParamNames(fn) {
             .replace(COMMENTS, '')
             .replace(FAT_ARROWS, '')
             .replace(DEFAULT_PARAMS, '');
-        result = code.slice(code.indexOf('(') + 1, code.indexOf(')')).match(/([^\s,]+)/g);    
+        result = code.slice(code.indexOf('(') + 1, code.indexOf(')')).match(/([^\s,]+)/g);
         result === null ? [] : result;
     }
     return result;
@@ -206,8 +209,31 @@ function getEmitValueSetCTXBody(ctx, arr) {
         }
     }
 }
+// 递归创建目录 异步方法  
+function mkdirs(dirname, callback) {
+    fs.exists(dirname, function (exists) {
+        if (exists) {
+            callback();
+        } else {
+            mkdirs(path.dirname(dirname), function () {
+                fs.mkdir(dirname, callback);
+            });
+        }
+    });
+}
+// 递归创建目录 同步方法
+function mkdirsSync(dirname) {
+    if (fs.existsSync(dirname)) {
+        return true;
+    } else {
+        if (mkdirsSync(path.dirname(dirname))) {
+            fs.mkdirSync(dirname);
+            return true;
+        }
+    }
+}
 
 module.exports = {
     isObject, isArray, isClass, isFunction, isString, isNumber, clone, arrDelete, arrAdd, toBool, toObject, getClassName, getClassFuncName, getFuncParamNames, formatReplace,
-    getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody,
+    getEmitFirstValue, getEmitValue, getEmitFirstValueSetCTXBody, getEmitValueSetCTXBody, mkdirs, mkdirsSync,
 }
