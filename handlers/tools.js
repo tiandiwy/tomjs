@@ -337,14 +337,23 @@ exports.defaultPQL = async function (ctx, default_pql) {
     const req = Object.assign({}, ctx.request.query ? ctx.request.query : {}, ctx.request.body ? ctx.request.body : {});
     const pql_query = req[models_cfg.pql.ctx_body_query_field];
     if (!(isString(pql_query) ? pql_query.trim() : pql_query)) {
+        let pql = undefined;
         if (default_pql === undefined || default_pql === null) {
-            default_pql = ctx._matchedRoute + '/' + ctx.routerName.replace('.', '/');
+            pql = ctx._matchedRoute + '/' + ctx.routerName.replace('.', '/');
         }
-        if (isFunction(default_pql)) {
-            ctx.request.query[models_cfg.pql.ctx_body_query_field] = await default_pql(ctx);
+        else if (isFunction(default_pql)) {
+            pql = await default_pql(ctx);
         }
         else if (isString(default_pql)) {
-            ctx.request.query[models_cfg.pql.ctx_body_query_field] = default_pql.trim();
+            pql = default_pql.trim();
         }
+        if (pql) {
+            if (ctx.request.body[models_cfg.pql.ctx_body_query_field]) {
+                ctx.request.body[models_cfg.pql.ctx_body_query_field] = pql;
+            } else {
+                ctx.request.query[models_cfg.pql.ctx_body_query_field] = pql;
+            }
+        }
+
     }
 }
