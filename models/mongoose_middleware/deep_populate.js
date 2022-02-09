@@ -86,7 +86,7 @@ module.exports = function (inmongoose) {
         return options;
     }
 
-    async function BuildPaths(conn, super_schema, schema, path_name, paths, options, all = true, deep = 0) {
+    async function BuildPaths(conn, super_schema, schema, path_name, paths, options, deep = 0) {
         options = options || {};
         if (options.max_deep === undefined) { options.max_deep = 3; }
         if (!isObject(options.locals)) { options.locals = {}; }
@@ -204,21 +204,21 @@ module.exports = function (inmongoose) {
         let except_arr = [];
         let have_virtual_obj = false;
         let virtual_obj = {};
-        if (all) {
-            for (let i in paths) {
-                if (!isObject(paths[i])) {
-                    if (paths[i] === 1) {
-                        if (schema && schema.virtuals[i]) {
-                            if (i == 'id') {
-                                only_arr.push(i);
-                            } else { paths[i] = {}; }
-                        } else { only_arr.push(i); }
-                    } else if (paths[i] < 1) {
-                        except_arr.push(i);
-                    }
+
+        for (let i in paths) {
+            if (!isObject(paths[i])) {
+                if (paths[i] === 1) {
+                    if (schema && schema.virtuals[i]) {
+                        if (i == 'id') {
+                            only_arr.push(i);
+                        } else { paths[i] = {}; }
+                    } else { only_arr.push(i); }
+                } else if (paths[i] < 1) {
+                    except_arr.push(i);
                 }
             }
         }
+
         if (super_schema && schema) {
             for (let idx in super_schema.virtuals) {
                 if (super_schema.virtuals[idx].options.ref == schema.methods.getModelClassName()) {
@@ -234,7 +234,7 @@ module.exports = function (inmongoose) {
                 let dqBelongsToMany = undefined;
                 switch (i) {
                     case '$match':
-                        if ((all && !options.is_guard) || options.is_pql_file === true) {
+                        if (!options.is_guard || options.is_pql_file === true) {
                             if (deep <= 0 && models_cfg.pql.first_match_allow) {
                                 RE.match = paths[i];
                                 for (const key in RE.match) {
@@ -250,7 +250,7 @@ module.exports = function (inmongoose) {
                         }
                         break;
                     case '$options':
-                        if (all) { RE.options = paths[i]; }
+                        RE.options = paths[i];
                         break;
                     default:
                         let changeBelongsToManyModel = undefined;
@@ -341,7 +341,7 @@ module.exports = function (inmongoose) {
 
         this.mongoose.Query.prototype.deepPopulate = function (paths, options = {}) {
             DefaultOptions(this.schema._defaultDeepPopulateOptions, options);
-            this._deepPopulatePaths = { paths, options, all: true, };
+            this._deepPopulatePaths = { paths, options };
             return this;
         }
         this.mongoose.Query.prototype.pql = this.mongoose.Query.prototype.deepPopulate;
@@ -424,7 +424,6 @@ module.exports = function (inmongoose) {
             RE = await BuildPaths(this.model.db || this.db, undefined, this.model.schema || this.schema, '',
                 this._deepPopulatePaths.paths,
                 this._deepPopulatePaths.options,
-                this._deepPopulatePaths.all,
                 0);
             this._deepPopulatePaths_End = {};
             this._deepPopulatePaths_End.re = RE;
@@ -734,7 +733,7 @@ module.exports = function (inmongoose) {
             .post('aggregate', aggregateEndDeepPopulate);
         schema.methods.deepPopulate = async function (paths, options = {}) { //查询后再填充            
             DefaultOptions(schema._defaultDeepPopulateOptions, options);
-            this._deepPopulatePaths = { paths, options, all: false };
+            this._deepPopulatePaths = { paths, options };
             let RE = await runDeepPopulate.call(this, null);
             let values = await this.populate(_.values(RE.populate)).execPopulate();
             endDeepPopulate.call(this, values);
