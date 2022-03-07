@@ -7,7 +7,7 @@ const { getClassName } = require2('tomjs/handlers/base_tools');
 
 class BaseController {
     constructor(EventName) {
-        this.authorize = authorize_fn;
+        this.authorize = authorize_sync_fn;//authorize_fn;
         this.authorize_sync = authorize_sync_fn;
         if (EventName === undefined) { EventName = getClassName(this); }
         this.emitter = Events.getEventEmitter(EventName);
