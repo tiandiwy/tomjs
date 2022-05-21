@@ -17,6 +17,7 @@ const websocket_wsservers = require2('tomjs/middleware/websocket_wsservers');
 const ws_init = require(path.join(app_dir, './init/websocket'));//提供用户第一时间初始化ws使用
 const ws_end_init = require(path.join(appdir, './websocket'));
 const AllWsServer = require2('tomjs/handlers/all_ws_server');
+const { isObject } = require('tomjs/handlers/base_tools');
 
 async function initWS(server_ws, isWSS) {
     AllWsServer.setWS(server_ws.ws.server, isWSS);
