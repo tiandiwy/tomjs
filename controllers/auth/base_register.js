@@ -40,12 +40,16 @@ class BaseRegister extends BaseUser {
         } catch (e) {
             throw new BaseApiError(BaseApiError.DB_ERROR, { message: e.message });
         }
-        let token = await this.BuildToken(ctx, user, expiresin_long);
+        const token = await this.BuildToken(ctx, user, expiresin_long);
+        const tokenInfo = this.decodeToken(token);
         this.emitter.emit('register', {ctx, user, token});
         ctx.body = {
+            id: user.id,
             name: user.name,
             userid: user.id,
             token: token,
+            exp: tokenInfo.exp,
+            exp_is_long: tokenInfo.exp_is_long,
         };
         return user;
     }
