@@ -30,6 +30,7 @@ class WS_URL_Router {
         new_ctx.ip = ctx.ip;
         new_ctx.ips = ctx.ips;
         new_ctx._body = undefined;
+        new_ctx.query = Object.assign({}, ctx.query);
         new_ctx.header = Object.assign({}, ctx.header, { data });
         new_ctx.headers = Object.assign({}, ctx.headers, { data });
         if (data.method) {
