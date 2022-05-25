@@ -45,12 +45,14 @@ class AllWSServers {
     };
 
     ctxBindBroadcastFn(ctx, data) {
+        ctx.websocket.ws_server = this;
         ctx.websocket.createRoom = ctx.websocket.servers.createRoom.bind(ctx.websocket.servers, ctx);
         ctx.websocket.deleteRoom = ctx.websocket.servers.deleteRoom.bind(ctx.websocket.servers, ctx);
         ctx.websocket.changeRoomAdmin = ctx.websocket.servers.changeRoomAdmin.bind(ctx.websocket.servers, ctx);
-        ctx.websocket.deleteRoom = ctx.websocket.servers.deleteRoom.bind(ctx.websocket.servers, ctx);
         ctx.websocket.joinRoom = ctx.websocket.servers.joinRoom.bind(ctx.websocket.servers, ctx);
         ctx.websocket.leaveRoom = ctx.websocket.servers.leaveRoom.bind(ctx.websocket.servers, ctx);
+        ctx.websocket.forceLeaveRoom = ctx.websocket.servers.leaveRoom.bind(ctx.websocket.servers);
+        ctx.websocket.getRooms = ctx.websocket.servers.getRooms.bind(ctx.websocket.servers);
         if (data) { ctx.websocket.broadcastRoom = ctx.websocket.servers.broadcastRoom.bind(ctx.websocket.servers, ctx, data); }
 
         ctx.websocket.sendSocket = ctx.websocket.servers.sendSocketByCTX.bind(ctx.websocket.servers, ctx);
@@ -200,6 +202,19 @@ class AllWSServers {
         return all_auth_users[id] || [];
     };
 
+    getUserIDBySocket(socket) {
+        let arr = Object.getOwnPropertyNames(all_auth_users);
+        let len = arr.length;
+        for (let i = 0; i < len; i++) {
+            if (typeof (all_auth_users[arr[i]]) != "function") {
+                if (all_auth_users[arr[i]].include(socket)) {
+                    return arr[i];
+                }
+            }
+        }
+        return undefined;
+    };
+
     getUsers(IDs) {
         if (!isArray(IDs)) {
             IDs = [IDs];
@@ -277,7 +292,11 @@ class AllWSServers {
         return await this.sendUsersAsync(IDs, data);
     };
 
-    createRoom(ctx, room_name) {
+    getRooms() {
+        return this.rooms;
+    }
+
+    createRoom(ctx, room_name, isAdmin = false) {
         let websocket = undefined;
         if (ctx) {
             if (ctx.websocket) {
@@ -285,7 +304,7 @@ class AllWSServers {
             }
         }
         if (!this.rooms[room_name]) {
-            this.rooms[room_name] = { creater: websocket, users: [] };
+            this.rooms[room_name] = { creater: isAdmin ? websocket : null, users: [] };
             emitter.emit('create_room', { ctx, room_name });
             if (ctx && websocket_cfg.create_room_auto_join) {
                 this.joinRoom(ctx, room_name);
@@ -294,7 +313,7 @@ class AllWSServers {
         return this.rooms[room_name];
     };
 
-    deleteRoom(ctx, room_name) {
+    deleteRoom(ctx, room_name, force = false) {
         if (!this.rooms[room_name]) {
             let websocket = undefined;
             if (ctx) {
@@ -302,7 +321,7 @@ class AllWSServers {
                     websocket = ctx.websocket;
                 }
             }
-            if ((!ctx) || (this.rooms[room_name].creater === websocket)) {
+            if (force || (!ctx) || (this.rooms[room_name].creater === websocket)) {
                 this.rooms[room_name].users.forEach(function each(user_ctx) {
                     this.leaveRoom(user_ctx, room_name);
                 });
@@ -314,7 +333,7 @@ class AllWSServers {
         return false;
     }
 
-    changeRoomAdmin(ctx, new_ctx, room_name) {
+    changeRoomAdmin(ctx, room_name, new_ctx, force = false) {
         if (!this.rooms[room_name]) {
             let socket = undefined;
             if (ctx) {
@@ -322,7 +341,7 @@ class AllWSServers {
                     socket = ctx.websocket;
                 }
             }
-            if ((!ctx) || (this.rooms[room_name].creater === socket)) {
+            if (force || (!ctx) || (this.rooms[room_name].creater === socket)) {
                 let new_socket = undefined;
                 if (new_ctx) {
                     if (new_ctx.websocket) {
@@ -337,7 +356,7 @@ class AllWSServers {
         return false;
     }
 
-    joinRoom(ctx, room_name) {
+    joinRoom(ctx, room_name, isAdmin = false) {
         let socket_id = undefined;
         let socket = undefined;
         if (ctx) {
@@ -354,6 +373,7 @@ class AllWSServers {
             if (all_sockets[socket_id]) {
                 arrAdd(all_sockets[socket_id].rooms, room_name);
             }
+            if (isAdmin) { roomObj.creater = socket }
             emitter.emit('join_room', { ctx, room_name });
         }
     }
