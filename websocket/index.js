@@ -7,7 +7,6 @@ const auth_user = require2('tomjs/middleware/auth_user');
 const setupLang = require2('tomjs/middleware/setuplang');
 const session = require2("tomjs-koa-session2");
 const Store = require2("tomjs/session/cahce_store");
-const appdir = require2('tomjs/handlers/dir')();
 const configs = require2('tomjs/configs')();
 const websocket_response_formatter = require2('tomjs/middleware/websocket_response_formatter');
 const websocket_lang = require2('tomjs/middleware/websocket_lang');
@@ -15,7 +14,7 @@ const websocket_onmessage = require2('tomjs/middleware/websocket_onmessage');
 const websocket_getid = require2('tomjs/middleware/websocket_getid');
 const websocket_wsservers = require2('tomjs/middleware/websocket_wsservers');
 const ws_init = require(path.join(app_dir, './init/websocket'));//提供用户第一时间初始化ws使用
-const ws_end_init = require(path.join(appdir, './websocket'));
+const ws_end_init = require(path.join(app_dir, './websocket'));
 const AllWsServer = require2('tomjs/handlers/all_ws_server');
 const { isObject } = require('tomjs/handlers/base_tools');
 
