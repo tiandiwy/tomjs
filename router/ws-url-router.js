@@ -12,14 +12,12 @@ const websocket_cfg = require2('tomjs/configs')().websocket;
 const AllWsServers = require2('tomjs/handlers/all_ws_server').getAllWS();
 const Events = require2('tomjs/handlers/events');
 const render = require2('tomjs/handlers/render');
-const router_jwt = require2('tomjs/auth/router_jwt');
 
 let emitter = Events.getEventEmitter('websocket');
 
 class WS_URL_Router {
     constructor() {
         this.router = new KoaRouter();
-        this.router_jwt = router_jwt(true);
     }
 
     cloneCTX(ctx, data) {
@@ -140,12 +138,11 @@ class WS_URL_Router {
         return new_ctx;
     }
 
-    path(path_str, controller, auth = false) {
+    path(path_str, controller) {
         let old_controller = controller;
         let controller_fn = () => { };
 
         let ws_route_fn = async (ctx, next) => {
-            if (auth) { await this.router_jwt(ctx, () => {}); }
             let iSendID = 0;
             function getNewSendID() {
                 iSendID++;

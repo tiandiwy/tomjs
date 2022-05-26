@@ -16,6 +16,14 @@ module.exports = async (ctx, next) => {
             if (isFunction(ctx.websocket.on_message)) {
                 await ctx.websocket.on_message(JSON.parse(message));
             }
+            else {
+                let handle = setInterval(async () => {
+                    if (isFunction(ctx.websocket.on_message)) {
+                        clearInterval(handle);
+                        await ctx.websocket.on_message(JSON.parse(message));
+                    }
+                }, 20);
+            }
         }
         catch (error) {
             let data = JSON.parse(message);
