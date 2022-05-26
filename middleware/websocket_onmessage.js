@@ -5,7 +5,7 @@ const ratelimit = require2('tomjs/middleware/ratelimit');//访问限制器
 const { isFunction, isObject, isString } = require2('tomjs/handlers/base_tools');
 const Events = require2('tomjs/handlers/events');
 
-let emitter = Events.getEventEmitter('websocket');
+const emitter = Events.getEventEmitter('websocket');
 
 module.exports = async (ctx, next) => {
     ctx.websocket.on('message', async (message) => {
@@ -18,11 +18,27 @@ module.exports = async (ctx, next) => {
             }
             else {
                 let handle = setInterval(async () => {
+                    //第一次只等1毫秒，而后再等就是20毫秒一次，最多100次
+                    clearInterval(handle);
                     if (isFunction(ctx.websocket.on_message)) {
-                        clearInterval(handle);
                         await ctx.websocket.on_message(JSON.parse(message));
                     }
-                }, 20);
+                    else {
+                        let mac_count = 100;
+                        let handle20 = setInterval(async () => {
+                            if (isFunction(ctx.websocket.on_message)) {
+                                clearInterval(handle20);
+                                await ctx.websocket.on_message(JSON.parse(message));
+                            }
+                            else {
+                                mac_count--;
+                                if (mac_count <= 0) {
+                                    clearInterval(handle20);
+                                }
+                            }
+                        }, 20);
+                    }
+                }, 1);
             }
         }
         catch (error) {

@@ -182,8 +182,10 @@ class AllWSServers {
         if (!isArray(all_auth_users[user_id])) {
             all_auth_users[user_id] = [];
         }
-        all_auth_users[user_id].push(socket);
-        emitter.emit('add_user', { ctx, user_id, count: all_auth_users[user_id].length });
+        if (!all_auth_users[user_id].includes(socket)) {
+            all_auth_users[user_id].push(socket);
+            emitter.emit('add_user', { ctx, user_id, count: all_auth_users[user_id].length });
+        }
     }
 
     deleteUser(ctx) {
