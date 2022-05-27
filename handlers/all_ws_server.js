@@ -201,16 +201,17 @@ class AllWSServers {
         let socket = ctx.websocket;
 
         let can_add = true;
-        if (websocket_cfg.user_max_connect > 0 && isArray(all_auth_users[user_id]) && !all_auth_users[user_id].includes(socket)) {
-            can_add = websocket_cfg.user_max_connect > all_auth_users[user_id].length;
-        }
-        if (can_add) {
-            if (isFunction(websocket_cfg.on_add_user_socket_fn)) {
-                if (!isArray(all_auth_users[user_id]) || (isArray(all_auth_users[user_id]) && !all_auth_users[user_id].includes(socket))) {
-                    can_add = websocket_cfg.on_add_user_socket_fn(ctx, socket, user_id, all_auth_users);
-                }
+        if (isFunction(websocket_cfg.on_add_user_socket_fn)) {
+            if (!isArray(all_auth_users[user_id]) || (isArray(all_auth_users[user_id]) && !all_auth_users[user_id].includes(socket))) {
+                can_add = websocket_cfg.on_add_user_socket_fn(ctx, socket, user_id, all_auth_users);
             }
-            if (can_add !== false) {
+        }
+        if (can_add !== false) {
+            can_add = true;
+            if (websocket_cfg.user_max_connect > 0 && isArray(all_auth_users[user_id]) && !all_auth_users[user_id].includes(socket)) {
+                can_add = websocket_cfg.user_max_connect > all_auth_users[user_id].length;
+            }
+            if (can_add) {
                 if (!isArray(all_auth_users[user_id])) {
                     all_auth_users[user_id] = [];
                 }
@@ -219,10 +220,11 @@ class AllWSServers {
                     emitter.emit('add_user', { ctx, user_id, count: all_auth_users[user_id].length });
                 }
             }
-        }
-        else {
-            emitter.emit('add_max_user', { ctx, user_id, count: isArray(all_auth_users[user_id]) ? all_auth_users[user_id].length : 0 });
-            socket.terminate();
+            else {
+                emitter.emit('add_max_user', { ctx, user_id, count: isArray(all_auth_users[user_id]) ? all_auth_users[user_id].length : 0 });
+                socket = all_auth_users[user_id].shift();
+                socket.terminate();
+            }
         }
     }
 
