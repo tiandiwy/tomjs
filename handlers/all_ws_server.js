@@ -4,7 +4,7 @@ const websocket_cfg = require2('tomjs/configs')().websocket;
 const buildError = require2('tomjs/handlers/build_error');
 const Events = require2('tomjs/handlers/events');
 let emitter = Events.getEventEmitter('websocket');
-const { isObject, isArray, arrDelete, arrAdd } = require2('tomjs/handlers/base_tools');
+const { isFunction, isObject, isArray, arrDelete, arrAdd } = require2('tomjs/handlers/base_tools');
 const { getUserIDByCTX } = require2('tomjs/handlers/listener_tools');
 
 let all_sockets = {};
@@ -69,8 +69,25 @@ class AllWSServers {
         let socket = ctx.websocket;
         let id = socket.getID();
         if (!all_sockets[id]) {
-            all_sockets[id] = { socket, rooms: [] };
-            emitter.emit('add_socket', { ctx, socket_id: id });
+            let can_add = true;
+            if (websocket_cfg.websocket_max_connect > 0) {
+                if (Object.keys(all_sockets).length >= websocket_cfg.websocket_max_connect) {
+                    can_add = false;
+                }
+            }
+            if (can_add) {
+                if (isFunction(websocket_cfg.on_add_socket_fn)) {
+                    can_add = websocket_cfg.on_add_socket_fn(socket, id, all_sockets);
+                }
+                if (can_add !== false) {
+                    all_sockets[id] = { socket, rooms: [] };
+                    emitter.emit('add_socket', { ctx, socket_id: id });
+                }
+            }
+            else {
+                emitter.emit('add_max_socket', { ctx, socket_id: id });
+                socket.terminate();
+            }
         }
         else {
             all_sockets[id].socket = socket;
@@ -90,6 +107,9 @@ class AllWSServers {
             let room_count = rooms.length;
             for (let i = 0; i < room_count; i++) {
                 this.leaveRoom(ctx, rooms[i], false);
+            }
+            if (isFunction(websocket_cfg.on_delete_socket_fn)) {
+                websocket_cfg.on_delete_socket_fn(socket, id, all_sockets);
             }
             delete all_sockets[id];
             emitter.emit('delete_socket', { ctx, socket_id: id, user_id });
@@ -179,12 +199,30 @@ class AllWSServers {
     addUser(ctx) {
         let user_id = getUserIDByCTX(ctx);
         let socket = ctx.websocket;
-        if (!isArray(all_auth_users[user_id])) {
-            all_auth_users[user_id] = [];
+
+        let can_add = true;
+        if (websocket_cfg.user_max_connect > 0 && isArray(all_auth_users[user_id]) && !all_auth_users[user_id].includes(socket)) {
+            can_add = websocket_cfg.user_max_connect > all_auth_users[user_id].length;
         }
-        if (!all_auth_users[user_id].includes(socket)) {
-            all_auth_users[user_id].push(socket);
-            emitter.emit('add_user', { ctx, user_id, count: all_auth_users[user_id].length });
+        if (can_add) {
+            if (isFunction(websocket_cfg.on_add_user_socket_fn)) {
+                if (!isArray(all_auth_users[user_id]) || (isArray(all_auth_users[user_id]) && !all_auth_users[user_id].includes(socket))) {
+                    can_add = websocket_cfg.on_add_user_socket_fn(ctx, socket, user_id, all_auth_users);
+                }
+            }
+            if (can_add !== false) {
+                if (!isArray(all_auth_users[user_id])) {
+                    all_auth_users[user_id] = [];
+                }
+                if (!all_auth_users[user_id].includes(socket)) {
+                    all_auth_users[user_id].push(socket);
+                    emitter.emit('add_user', { ctx, user_id, count: all_auth_users[user_id].length });
+                }
+            }
+        }
+        else {
+            emitter.emit('add_max_user', { ctx, user_id, count: isArray(all_auth_users[user_id]) ? all_auth_users[user_id].length : 0 });
+            socket.terminate();
         }
     }
 
@@ -194,6 +232,9 @@ class AllWSServers {
         if (all_auth_users[user_id]) {
             let arr = arrDelete(all_auth_users[user_id], socket);
             if (arr.length <= 0) {
+                if (isFunction(websocket_cfg.on_delete_user_socket_fn)) {
+                    websocket_cfg.on_delete_user_socket_fn(ctx, socket, user_id, all_auth_users);
+                }
                 delete all_auth_users[user_id];
             }
             emitter.emit('delete_user', { ctx, user_id, count: arr.length });
