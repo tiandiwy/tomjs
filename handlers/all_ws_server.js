@@ -206,10 +206,21 @@ class AllWSServers {
                 can_add = websocket_cfg.on_add_user_socket_fn(ctx, socket, user_id, all_auth_users);
             }
         }
-        if (can_add !== false) {
-            can_add = true;
-            if (websocket_cfg.user_max_connect > 0 && isArray(all_auth_users[user_id]) && !all_auth_users[user_id].includes(socket)) {
-                can_add = websocket_cfg.user_max_connect > all_auth_users[user_id].length;
+        if (can_add !== false) { can_add = true; }
+        if (can_add && websocket_cfg.max_users_connect > 0) {
+            if (!isArray(all_auth_users[user_id])) {
+                const len = Object.keys(all_auth_users).length;
+                if (len >= websocket_cfg.max_users_connect) {
+                    can_add = false;
+                    emitter.emit('add_max_users', { ctx, user_id, count: len });
+                    socket.terminate();
+                    return;
+                }
+            }
+        }
+        if (can_add) {
+            if (websocket_cfg.one_user_max_connect > 0 && isArray(all_auth_users[user_id]) && !all_auth_users[user_id].includes(socket)) {
+                can_add = websocket_cfg.one_user_max_connect > all_auth_users[user_id].length;
             }
             if (can_add) {
                 if (!isArray(all_auth_users[user_id])) {
@@ -221,7 +232,7 @@ class AllWSServers {
                 }
             }
             else {
-                emitter.emit('add_max_user', { ctx, user_id, count: isArray(all_auth_users[user_id]) ? all_auth_users[user_id].length : 0 });
+                emitter.emit('add_one_user_max', { ctx, user_id, count: isArray(all_auth_users[user_id]) ? all_auth_users[user_id].length : 0 });
                 socket = all_auth_users[user_id].shift();
                 socket.terminate();
             }
