@@ -263,23 +263,29 @@ class WS_URL_Router {
                     let new_next = async () => {
                         if (!isRunNewNext) {
                             isRunNewNext = true;
-                            if (new_ctx.status === 0) {
-                                if ((new_ctx.matched === undefined)
-                                    || (isArray(new_ctx.matched) && new_ctx.matched.length <= 0)
-                                ) {
-                                    new_ctx.status = 404;
-                                    throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, data);
-                                }
+                            if ((new_ctx.status === 0) && ((new_ctx.matched === undefined)
+                                || (isArray(new_ctx.matched) && new_ctx.matched.length <= 0)
+                            )) {
+                                new_ctx.status = 404;
+                                throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, data);
+
                             }
-                            else if (new_ctx.status == 200 && data.id && !data.id.startsWith(websocket_cfg.websocket_id_head)) {
+                            else if ((new_ctx.status === 0 || new_ctx.status == 200) && data.id && !data.id.startsWith(websocket_cfg.websocket_id_head)) {
                                 new_ctx.websocket.reply(new_ctx.body);
                             }
                         }
                         return Promise.resolve();
                     };
-                    await controller_fn(new_ctx, new_next);
-                    if (!isRunNewNext) {
-                        await new_next();
+                    try {
+                        await controller_fn(new_ctx, new_next);
+                        if (!isRunNewNext) {
+                            await new_next();
+                        }
+                    }
+                    catch (error) {
+                        if (new_ctx.websocket.error_send) {
+                            new_ctx.websocket.error_send(error, data);
+                        }
                     }
                 }
             };

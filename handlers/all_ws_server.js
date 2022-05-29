@@ -93,8 +93,8 @@ class AllWSServers {
                 else {
                     socket.send(JSON.stringify({ code: BaseApiError.WEB_SOCKET_ADD_MAX_SOCKET, message: 'web socket add max' }));
                 }
-                setImmediate(() => { 
-                    socket.terminate() 
+                setImmediate(() => {
+                    socket.terminate()
                 });
             }
         }
@@ -374,14 +374,8 @@ class AllWSServers {
     }
 
     createRoom(ctx, room_name, isAdmin = false) {
-        let websocket = undefined;
-        if (ctx) {
-            if (ctx.websocket) {
-                websocket = ctx.websocket;
-            }
-        }
         if (!this.rooms[room_name]) {
-            this.rooms[room_name] = { creator: isAdmin ? websocket : null, users: [] };
+            this.rooms[room_name] = { creator: isAdmin ? ctx.auth.id() : null, users: {} };
             emitter.emit('create_room', { ctx, room_name });
             if (ctx && websocket_cfg.create_room_auto_join) {
                 this.joinRoom(ctx, room_name);
@@ -398,9 +392,10 @@ class AllWSServers {
                     websocket = ctx.websocket;
                 }
             }
-            if (force || (!ctx) || (this.rooms[room_name].creator === websocket)) {
-                this.rooms[room_name].users.forEach(function each(user_ctx) {
-                    this.leaveRoom(user_ctx, room_name);
+            if (force || (!ctx) || (this.rooms[room_name].creator === ctx.auth.id())) {
+                const users = this.rooms[room_name].users;
+                Object.keys(users).forEach((user_id) => {
+                    this.leaveRoom(users[user_id], room_name);
                 });
                 delete this.rooms[room_name];
                 emitter.emit('delete_room', { ctx, room_name, auto: false });
@@ -418,22 +413,22 @@ class AllWSServers {
                     socket = ctx.websocket;
                 }
             }
-            if (force || (!ctx) || (this.rooms[room_name].creator === socket)) {
-                let new_socket = undefined;
-                if (new_ctx) {
-                    if (new_ctx.websocket) {
-                        new_socket = new_ctx.websocket;
+            if (force || (!ctx) || (this.rooms[room_name].creator === ctx.auth.id())) {
+                if (new_ctx && new_ctx.auth && isFunction(new_ctx.auth.id)) {
+                    const new_user_id = new_ctx.auth.id();
+                    if (!this.rooms[room_name].users[new_user_id]) {
+                        this.rooms[room_name].users[new_user_id] = new_ctx;
                     }
+                    this.rooms[room_name].creator = new_user_id;
+                    emitter.emit('change_room_admin', { ctx, room_name, new_ctx });
+                    return true;
                 }
-                this.rooms[room_name].creator = new_socket;
-                emitter.emit('change_room_admin', { ctx, room_name, new_ctx });
-                return true;
             }
         }
         return false;
     }
 
-    joinRoom(ctx, room_name, isAdmin = false) {
+    async joinRoom(ctx, room_name, isAdmin = false) {
         let socket_id = undefined;
         let socket = undefined;
         if (ctx) {
@@ -443,19 +438,24 @@ class AllWSServers {
             }
         }
         let roomObj = this.createRoom(ctx, room_name);
-        if (!roomObj.users.find((val) => val.websocket === socket)) {
-            roomObj.users.push(ctx);
+        const user_id = ctx.auth.id();
+        if (!roomObj.users[user_id]) {
+            ctx.auth.room_user_name = await ctx.auth.user().name;
+            roomObj.users[user_id] = ctx;
 
             //和all_sockets做关联 方便用户下线了，自动检测并离开聊天室
             if (all_sockets[socket_id]) {
                 arrAdd(all_sockets[socket_id].rooms, room_name);
             }
-            if (isAdmin) { roomObj.creator = socket }
+            if (isAdmin) { roomObj.creator = user_id }
             emitter.emit('join_room', { ctx, room_name });
+            return true;
         }
+        return false;
     }
 
     leaveRoom(ctx, room_name, del_socket_room = true) {
+        let RE = false;
         let socket_id = undefined;
         let socket = undefined;
         if (ctx) {
@@ -465,12 +465,15 @@ class AllWSServers {
             }
         }
         if (this.rooms[room_name]) {
-            if (del_socket_room) {
-                if (all_sockets[socket_id]) {
-                    arrDelete(all_sockets[socket_id].rooms, room_name);
+            if (roomObj.users[ctx.auth.id()]) {
+                delete roomObj.users[ctx.auth.id()];
+                if (del_socket_room) {
+                    if (all_sockets[socket_id]) {
+                        arrDelete(all_sockets[socket_id].rooms, room_name);
+                    }
                 }
+                RE = true;
             }
-            arrDelete(this.rooms[room_name].users, ctx, (val) => val.websocket === socket);
             emitter.emit('leave_room', { ctx, room_name });
             if (websocket_cfg.auto_delete_empty_room) {
                 if (this.rooms[room_name].users.length <= 0) {
@@ -479,6 +482,7 @@ class AllWSServers {
                 }
             }
         }
+        return RE;
     }
 
     async broadcastRoom(ctx, data, room_name, send_data, all = false) {
@@ -490,7 +494,7 @@ class AllWSServers {
                 socket_id = ctx.websocket.getID();
             }
         }
-        if (this.rooms[room_name] && (this.rooms[room_name].users.find((val) => val.websocket === socket) || !ctx)) {
+        if (this.rooms[room_name]) {
             let iCount = 0;
             let ws_data = undefined;
             if (!isObject(send_data)) {
@@ -516,9 +520,11 @@ class AllWSServers {
                 ws_data = Object.assign({}, { method: data.method, path: data.path, room_name }, ws_data);
             }
 
-            this.rooms[room_name].users.forEach(function each(client) {
-                if ((all || client.websocket !== socket) && client.websocket.readyState === WebSocket.OPEN) {
-                    client.websocket.send(ws_data);
+            const users = this.rooms[room_name].users;
+            Object.keys(users).forEach((user_id) => {
+                const websocket = users[user_id].websocket;
+                if ((all || websocket !== socket) && websocket.readyState === WebSocket.OPEN) {
+                    websocket.send(ws_data);
                     iCount++;
                 }
             });
