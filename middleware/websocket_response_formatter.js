@@ -15,7 +15,7 @@ module.exports = async function (ctx, next) {
         }        
         let new_data = {
             code: 0,
-            message: 'ok',
+            message: 'OK',
             data: data
         }
         arguments[0] = JSON.stringify(Object.assign({}, new_data, data));
@@ -82,7 +82,7 @@ module.exports = async function (ctx, next) {
 
         if (isOK) {
             err_obj.code = 0;
-            err_obj.message = 'ok';
+            err_obj.message = 'OK';
             err_obj.data = {};
         }
         else {
