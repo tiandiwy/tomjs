@@ -246,7 +246,7 @@ class WS_URL_Router {
                         if (data.id && !data.id.startsWith(websocket_cfg.websocket_id_head)) {
                             return old_send(Object.assign({}, {
                                 code: 0,
-                                message: 'success',
+                                message: 'ok',
                                 id: data.id,
                                 method: data.method,
                                 path: data.path,
