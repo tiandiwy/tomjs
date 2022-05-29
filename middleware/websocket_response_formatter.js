@@ -10,7 +10,7 @@ module.exports = async function (ctx, next) {
     ctx.websocket.old_send = ctx.websocket.send;
     ctx.websocket.send = function (data) {
         if (data === undefined) { data = {}; }
-        if (!isObject(data) || !data.data) {
+        if (!isObject(data)) {
             data = { data: data };
         }        
         let new_data = {
