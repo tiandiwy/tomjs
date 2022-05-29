@@ -99,6 +99,15 @@ function BaseApiError(error_code, error_msg, data) {
             case BaseApiError.ONLY_PQL_FILE_ERROR:
                 message = 'ONLY_PQL_FILE_ERROR';
                 break;
+            case BaseApiError.WEB_SOCKET_ADD_MAX_SOCKET:
+                message = 'WEB_SOCKET_ADD_MAX_SOCKET';
+                break;
+            case BaseApiError.WEB_SOCKET_ADD_MAX_USERS:
+                message = 'WEB_SOCKET_ADD_MAX_USERS';
+                break;
+            case BaseApiError.WEB_SOCKET_ADD_ONE_USER_MAX:
+                message = 'WEB_SOCKET_ADD_ONE_USER_MAX';
+                break;
             case BaseApiError.UNKNOW:
             default:
                 message = 'UNKNOW';
@@ -163,5 +172,8 @@ BaseApiError.JWT_ERROR = 901;//jwt相关错误
 BaseApiError.JSON_PARSE_ERROR = 1001;//解析JSON错误
 BaseApiError.PQL_FILE_ERROR = 1010;//载入PQL文件错误或解析成json时发生错误
 BaseApiError.ONLY_PQL_FILE_ERROR = 1011;//PQL查询只允许使用PQL文件方式
+BaseApiError.WEB_SOCKET_ADD_MAX_SOCKET = 1100;//WebSocket连接遇到最大Socket连接上限
+BaseApiError.WEB_SOCKET_ADD_MAX_USERS = 1101;//WebSocket连接遇到最大用户连接上限
+BaseApiError.WEB_SOCKET_ADD_ONE_USER_MAX = 1102;//WebSocket连接遇到单个用户（反复）连接上限
 
 module.exports = BaseApiError;

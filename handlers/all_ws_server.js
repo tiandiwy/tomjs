@@ -2,6 +2,7 @@ const require2 = require('tomjs/handlers/require2');
 const WebSocket = require2('ws');
 const websocket_cfg = require2('tomjs/configs')().websocket;
 const buildError = require2('tomjs/handlers/build_error');
+const BaseApiError = require2('tomjs/error/base_api_error');
 const Events = require2('tomjs/handlers/events');
 let emitter = Events.getEventEmitter('websocket');
 const { isFunction, isObject, isArray, arrDelete, arrAdd } = require2('tomjs/handlers/base_tools');
@@ -85,8 +86,16 @@ class AllWSServers {
                 }
             }
             else {
-                emitter.emit('add_max_socket', { ctx, socket_id: id });
-                socket.terminate();
+                emitter.emit('error_add_max_socket', { ctx, socket_id: id });
+                if (isFunction(socket.error_send)) {
+                    socket.error_send(new BaseApiError(BaseApiError.WEB_SOCKET_ADD_MAX_SOCKET));
+                }
+                else {
+                    socket.send(JSON.stringify({ code: BaseApiError.WEB_SOCKET_ADD_MAX_SOCKET, message: 'web socket add max' }));
+                }
+                setImmediate(() => { 
+                    socket.terminate() 
+                });
             }
         }
         else {
@@ -212,8 +221,14 @@ class AllWSServers {
                 const len = Object.keys(all_auth_users).length;
                 if (len >= websocket_cfg.max_users_connect) {
                     can_add = false;
-                    emitter.emit('add_max_users', { ctx, user_id, count: len });
-                    socket.terminate();
+                    emitter.emit('error_add_max_users', { ctx, user_id, count: len });
+                    if (isFunction(socket.error_send)) {
+                        socket.error_send(new BaseApiError(BaseApiError.WEB_SOCKET_ADD_MAX_USERS));
+                    }
+                    else {
+                        socket.send(JSON.stringify({ code: BaseApiError.WEB_SOCKET_ADD_MAX_USERS, message: 'web socket add max users' }));
+                    }
+                    setImmediate(() => { socket.terminate() });
                     return;
                 }
             }
@@ -232,9 +247,15 @@ class AllWSServers {
                 }
             }
             else {
-                emitter.emit('add_one_user_max', { ctx, user_id, count: isArray(all_auth_users[user_id]) ? all_auth_users[user_id].length : 0 });
+                emitter.emit('error_add_one_user_max', { ctx, user_id, count: isArray(all_auth_users[user_id]) ? all_auth_users[user_id].length : 0 });
                 socket = all_auth_users[user_id].shift();
-                socket.terminate();
+                if (isFunction(socket.error_send)) {
+                    socket.error_send(new BaseApiError(BaseApiError.WEB_SOCKET_ADD_ONE_USER_MAX));
+                }
+                else {
+                    socket.send(JSON.stringify({ code: BaseApiError.WEB_SOCKET_ADD_ONE_USER_MAX, message: 'web socket add one user max' }));
+                }
+                setImmediate(() => { socket.terminate() });
             }
         }
     }
