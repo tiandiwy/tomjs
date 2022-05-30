@@ -373,11 +373,11 @@ class AllWSServers {
         return this.rooms;
     }
 
-    createRoom(ctx, room_name, isAdmin = false) {
+    createRoom(ctx, room_name, join = true, isAdmin = false) {
         if (!this.rooms[room_name]) {
             this.rooms[room_name] = { creator: isAdmin ? ctx.auth.id() : null, users: {} };
             emitter.emit('create_room', { ctx, room_name });
-            if (ctx && websocket_cfg.create_room_auto_join) {
+            if (ctx && join) {
                 this.joinRoom(ctx, room_name);
             }
         }
@@ -437,13 +437,13 @@ class AllWSServers {
                 socket_id = ctx.websocket.getID();
             }
         }
-        let roomObj = this.createRoom(ctx, room_name);
+        let roomObj = this.createRoom(ctx, room_name, false);
         const user_id = ctx.auth.id();
         if (!ctx.auth.room_user_name) {
             const user = await ctx.auth.user();
             ctx.auth.room_user_name = user.name;
         }
-        if (!roomObj.users[user_id]) {
+        if (!roomObj.users[user_id] || roomObj.users[user_id] != ctx) {
             roomObj.users[user_id] = ctx;
 
             //和all_sockets做关联 方便用户下线了，自动检测并离开聊天室
@@ -453,12 +453,6 @@ class AllWSServers {
             if (isAdmin) { roomObj.creator = user_id }
             emitter.emit('join_room', { ctx, room_name });
             return true;
-        }
-        else {
-            if (roomObj.users[user_id] != ctx) {
-                roomObj.users[user_id] == ctx;
-                return true;
-            }
         }
         return false;
     }
