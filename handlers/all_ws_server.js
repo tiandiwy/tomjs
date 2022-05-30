@@ -439,8 +439,11 @@ class AllWSServers {
         }
         let roomObj = this.createRoom(ctx, room_name);
         const user_id = ctx.auth.id();
+        if (!ctx.auth.room_user_name) {
+            const user = await ctx.auth.user();
+            ctx.auth.room_user_name = user.name;
+        }
         if (!roomObj.users[user_id]) {
-            ctx.auth.room_user_name = await ctx.auth.user().name;
             roomObj.users[user_id] = ctx;
 
             //和all_sockets做关联 方便用户下线了，自动检测并离开聊天室
@@ -450,6 +453,12 @@ class AllWSServers {
             if (isAdmin) { roomObj.creator = user_id }
             emitter.emit('join_room', { ctx, room_name });
             return true;
+        }
+        else {
+            if (roomObj.users[user_id] != ctx) {
+                roomObj.users[user_id] == ctx;
+                return true;
+            }
         }
         return false;
     }
@@ -465,8 +474,8 @@ class AllWSServers {
             }
         }
         if (this.rooms[room_name]) {
-            if (roomObj.users[ctx.auth.id()]) {
-                delete roomObj.users[ctx.auth.id()];
+            if (this.rooms[room_name].users[ctx.auth.id()]) {
+                delete this.rooms[room_name].users[ctx.auth.id()];
                 if (del_socket_room) {
                     if (all_sockets[socket_id]) {
                         arrDelete(all_sockets[socket_id].rooms, room_name);
@@ -521,9 +530,10 @@ class AllWSServers {
             }
 
             const users = this.rooms[room_name].users;
+            const ctx_user_id = ctx.auth.id();
             Object.keys(users).forEach((user_id) => {
                 const websocket = users[user_id].websocket;
-                if ((all || websocket !== socket) && websocket.readyState === WebSocket.OPEN) {
+                if ((all || ctx_user_id !== user_id) && websocket.readyState === WebSocket.OPEN) {
                     websocket.send(ws_data);
                     iCount++;
                 }
