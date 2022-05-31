@@ -3,8 +3,8 @@ const path = require2('path');
 const WebSocket = require2('ws');
 const appdir = require2('tomjs/handlers/dir')();
 const BaseApiError = require2('tomjs/error/base_api_error');
-const WSRouterRrror = require2('tomjs/error/ws_router_error');
-const WSTimeOutRrror = require2('tomjs/error/ws_timeout_error');
+const WSRouterError = require2('tomjs/error/ws_router_error');
+const WSTimeOutError = require2('tomjs/error/ws_timeout_error');
 const KoaRouter = require2('koa-router');
 const { isObject, isArray, isString, isFunction } = require2('tomjs/handlers/tools');
 const subdomain_cfg = require2('tomjs/configs')().subdomain;
@@ -198,7 +198,7 @@ class WS_URL_Router {
                     if (time_out > 0) {
                         let timeout_fn = function () {
                             if (AsyncObj[id]) { delete AsyncObj[id] }
-                            reject(new WSTimeOutRrror('websocket time out:' + time_out, { id, method, path, data: send_data }));
+                            reject(new WSTimeOutError('websocket time out:' + time_out, { id, method, path, data: send_data }));
                         }
                         timeout_handle = setTimeout(timeout_fn, time_out);
                     }
@@ -226,7 +226,7 @@ class WS_URL_Router {
                     }
                     else {
                         //无需回复，但客户端依旧回复的内容
-                        emitter.emit('receive_error_reply', { data, new_ctx });
+                        emitter.emit('error_receive_reply', { data, new_ctx });
                     }
                 }
                 else {
@@ -301,11 +301,11 @@ class WS_URL_Router {
                 controller = ws_route_fn;
             }
             else {
-                throw new WSRouterRrror(`ws_router param:${old_controller}, error: Not find routes function`);
+                throw new WSRouterError(`ws_router param:${old_controller}, error: Not find routes function`);
             }
         }
         else if (!isFunction(controller)) {
-            throw new WSRouterRrror(`ws_router param:${old_controller}, error: Not a function or Object`);
+            throw new WSRouterError(`ws_router param:${old_controller}, error: Not a function or Object`);
         }
 
         return this.router.all(path_str, controller);
