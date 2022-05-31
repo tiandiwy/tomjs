@@ -503,7 +503,7 @@ class AllWSServers {
             if (!isObject(send_data)) {
                 ws_data = { data: send_data };
             }
-            else if (!send_data.data) {
+            else if (send_data.data === undefined) {
                 ws_data = { data: send_data };
             }
             else {
