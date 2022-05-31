@@ -517,7 +517,7 @@ class AllWSServers {
                 if (!user) {
                     user = { id: undefined, name: undefined };
                 }
-                ws_data = Object.assign({}, { method: data.method, path: data.path, room_name, socket_id, sender_id: user.id, sender_name: user.name }, ws_data);
+                ws_data = Object.assign({}, { method: data.method, path: data.path, room_name, socket_id }, ws_data);
             }
             else {
                 ws_data = Object.assign({}, { method: data.method, path: data.path, room_name }, ws_data);
