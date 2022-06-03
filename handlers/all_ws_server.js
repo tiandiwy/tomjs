@@ -394,9 +394,9 @@ class AllWSServers {
             }
             if (force || (!ctx) || (this.rooms[room_name].creator === ctx.auth.id())) {
                 const users = this.rooms[room_name].users;
-                Object.keys(users).forEach((user_id) => {
+                for (const user_id in users) {
                     this.leaveRoom(users[user_id], room_name);
-                });
+                }
                 delete this.rooms[room_name];
                 emitter.emit('delete_room', { ctx, room_name, auto: false });
                 return true;
@@ -525,13 +525,13 @@ class AllWSServers {
 
             const users = this.rooms[room_name].users;
             const ctx_user_id = ctx.auth.id();
-            Object.keys(users).forEach((user_id) => {
+            for (const user_id in users) {
                 const websocket = users[user_id].websocket;
                 if ((all || ctx_user_id !== user_id) && websocket.readyState === WebSocket.OPEN) {
                     websocket.send(ws_data);
                     iCount++;
                 }
-            });
+            }
             return iCount;
         }
         else {
