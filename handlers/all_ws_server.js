@@ -488,7 +488,8 @@ class AllWSServers {
         return RE;
     }
 
-    async broadcastRoom(ctx, data, room_name, send_data, all = false) {
+    //onFilter(ctx, user_id, users) ctx 发送者的ctx, 接收者user_id, 所有接收者对象users 通users[user_id]找到接收者ctx
+    async broadcastRoom(ctx, data, room_name, send_data, all = false, onFilter = null) {
         let socket_id = undefined;
         let socket = undefined;
         if (ctx) {
@@ -528,8 +529,14 @@ class AllWSServers {
             for (const user_id in users) {
                 const websocket = users[user_id].websocket;
                 if ((all || ctx_user_id !== user_id) && websocket.readyState === WebSocket.OPEN) {
-                    websocket.send(ws_data);
-                    iCount++;
+                    let boCanSend = true;
+                    if (isFunction(onFilter)) {
+                        boCanSend = onFilter(ctx, user_id, users);
+                    }
+                    if (boCanSend) {
+                        websocket.send(ws_data);
+                        iCount++;
+                    }
                 }
             }
             return iCount;
