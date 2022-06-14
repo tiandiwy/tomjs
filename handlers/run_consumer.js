@@ -6,7 +6,7 @@ const { isObject, isArray, isClass, isFunction, isString, analysisConfig } = req
 const { getConsumer } = require2('tomjs/streams');
 const StreamsError = require2('tomjs/error/streams_error');
 const Events = require2('tomjs/handlers/events');
-const uuidv4 = require('uuid/v4');
+const uuid = require('uuid');
 const split = ';';
 let ConsumerArr = [];
 
@@ -78,7 +78,7 @@ async function build(server_name, config) {
     } else if (isString(config.name)) {
         name = config.name;
         if (name.trim().toLowerCase() == '$uuid') {
-            name = uuidv4();
+            name = uuid.v4();
         }
     }
 

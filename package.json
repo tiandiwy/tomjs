@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.9.161",
+  "version": "0.9.162",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {
@@ -72,6 +72,7 @@
     "tomjs-koa-session2": "^1.0.1",
     "twig": "^1.15.4",
     "universal-dotenv": "^1.9.3",
+    "uuid": "^8.3.2",
     "validatorjs_tom": "^0.1.2",
     "vamtiger-regex-html-title": "0.0.5",
     "xregexp": "^4.3.0"
