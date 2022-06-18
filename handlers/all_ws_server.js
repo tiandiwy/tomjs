@@ -439,10 +439,10 @@ class AllWSServers {
         }
         let roomObj = this.createRoom(ctx, room_name, false);
         const user_id = ctx.auth.id();
-        if (!ctx.auth.room_user_name) {
-            const user = await ctx.auth.user();
-            ctx.auth.room_user_name = user.name;
-        }
+        // if (!ctx.auth.room_user_name) {
+        //     const user = await ctx.auth.user();
+        //     ctx.auth.room_user_name = user.name;
+        // }
         if (!roomObj.users[user_id] || roomObj.users[user_id] != ctx) {
             roomObj.users[user_id] = ctx;
 
