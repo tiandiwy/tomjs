@@ -313,10 +313,10 @@ exports.getUrlDomain = function (defUrlDomain) {
     return url;
 }
 
-exports.filterCTXQuery = function (ctx) {
+exports.filterCTXQuery = function (ctx, request = false) {
     let reObj = {};
-    if (isObject(ctx.query)) {
-        reObj = JSON.parse(JSON.stringify(ctx.query));
+    if (isObject(request ? ctx.request.body : ctx.query)) {
+        reObj = JSON.parse(JSON.stringify(request ? ctx.request.body : ctx.query));
         if (reObj[models_cfg.pql.ctx_body_query_field] !== undefined) {
             delete reObj[models_cfg.pql.ctx_body_query_field];
         }
