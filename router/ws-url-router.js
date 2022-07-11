@@ -33,13 +33,21 @@ class WS_URL_Router {
         new_ctx.query = Object.assign({}, ctx.query);
         new_ctx.header = Object.assign({}, ctx.header, { data });
         new_ctx.headers = Object.assign({}, ctx.headers, { data });
+        new_ctx.auth = ctx.auth;
         if (data.method) {
             new_ctx.method = data.method;
         }
         if (data.path) { new_ctx.path = data.path; }
         new_ctx.websocket.message = data;
         if (isObject(data) && data.data) {
-            new_ctx.request = { body: data.data };
+            // new_ctx.request = { body: data.data };
+            const method = data.method.trim().toUpperCase();
+            if (method === 'POST' || method === 'PATCH') {
+                new_ctx.request = { body: data.data };
+            }
+            else {
+                new_ctx.query = Object.assign({}, data.data);
+            }
         }
         Object.defineProperty(new_ctx, "body", {
             configurable: false,
