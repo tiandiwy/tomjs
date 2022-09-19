@@ -302,7 +302,7 @@ class MongooseModel {
         this.BuildSchema.plugin(mongooseHidden, { virtuals: hidden_info, defaultHidden: models_cfg.defaultHidden });
     }
 
-    baseHas(field_name = "", { ref, localField, foreignField, justOne, match, select, options } = {}) {
+    baseHas(field_name = "", { ref, localField, foreignField, justOne, match, select, options, count } = {}) {
         if (field_name.length <= 0) {
             throw new MongooseError("field_name is empty");
         }
@@ -312,7 +312,7 @@ class MongooseModel {
         if (!localField) { localField = system_id; }
         if (!foreignField) { foreignField = pluralize.singular(field_name) + system_id; }
         justOne = justOne ? true : false;
-        this.relationshipsVirtuals[field_name] = { ref, localField, foreignField, justOne, match, select, options };
+        this.relationshipsVirtuals[field_name] = { ref, localField, foreignField, justOne, match, select, options, count };
     }
 
     hasOne(field_name = "", options = {}) {
@@ -338,7 +338,7 @@ class MongooseModel {
         this.baseHas(field_name, options);
     }
 
-    baseBelongs(field_name = "", { ref, localField, foreignField, justOne, match, select, options } = {}) {
+    baseBelongs(field_name = "", { ref, localField, foreignField, justOne, match, select, options, count } = {}) {
         if (field_name.length <= 0) {
             throw new MongooseError("field_name is empty");
         }
@@ -348,7 +348,7 @@ class MongooseModel {
         if (!localField) { localField = pluralize.singular(field_name) + system_id; }
         if (!foreignField) { foreignField = system_id; }
         justOne = justOne ? true : false;
-        this.relationshipsVirtuals[field_name] = { ref, localField, foreignField, justOne, match, select, options };
+        this.relationshipsVirtuals[field_name] = { ref, localField, foreignField, justOne, match, select, options, count };
     }
 
     belongsTo(field_name = "", options = {}) {
@@ -364,7 +364,7 @@ class MongooseModel {
     //localField: _id
     //foreignField: emp_id//EmpGroupModel.
     //populateField: group//EmpGroupModel
-    belongsToMany(fieldName = "", { ref, localField, foreignField, populateField, match, select, options } = {}) {
+    belongsToMany(fieldName = "", { ref, localField, foreignField, populateField, match, select, options, count } = {}) {
         if (fieldName.length <= 0) {
             throw new MongooseError("belongsToMany fieldName is empty");
         }
@@ -378,16 +378,16 @@ class MongooseModel {
         if (!foreignField) { foreignField = fromNameMe + system_id; }
         if (!populateField) { populateField = fromNameTo; }
         let belongs_to_many = _belongs_to_many_head + fieldName;
-        this.hasMany(belongs_to_many, { ref, localField, foreignField, match, select, options });
-        this._all_belongsToMany[belongs_to_many] = { belongs_to_many, fieldName, ref, localField, foreignField, populateField, match, select, options };
+        this.hasMany(belongs_to_many, { ref, localField, foreignField, match, select, options, count });
+        this._all_belongsToMany[belongs_to_many] = { belongs_to_many, fieldName, ref, localField, foreignField, populateField, match, select, options, count };
         this._all_belongsToMany2[fieldName] = this._all_belongsToMany[belongs_to_many];
     }
 
-    hasManyThrough(fieldName = "", through = "", { localField, foreignField, populateField, match, select, options } = {}) {
-        this.belongsToMany(fieldName, { ref: through, localField, foreignField, populateField, match, select, options });
+    hasManyThrough(fieldName = "", through = "", { localField, foreignField, populateField, match, select, options, count } = {}) {
+        this.belongsToMany(fieldName, { ref: through, localField, foreignField, populateField, match, select, options, count });
     }
 
-    morphTo(fieldName = "", { localField = "", modelField = "", foreignField, justOne, match, select, options } = {}) {
+    morphTo(fieldName = "", { localField = "", modelField = "", foreignField, justOne, match, select, options, count } = {}) {
         let ref = undefined;
 
         if (fieldName.length <= 0) {
@@ -418,10 +418,10 @@ class MongooseModel {
         }
         if (!foreignField) { foreignField = system_id; }
         justOne = toBool(justOne || true);
-        this.relationshipsVirtuals[fieldName] = { ref, localField, foreignField, justOne, match, select, options };
+        this.relationshipsVirtuals[fieldName] = { ref, localField, foreignField, justOne, match, select, options, count };
     }
 
-    morphMany(fieldName = "", { ref = "", model = "", modelField = "", localField, foreignField, match, select, options } = {}) {
+    morphMany(fieldName = "", { ref = "", model = "", modelField = "", localField, foreignField, match, select, options, count } = {}) {
         if (fieldName.length <= 0) {
             throw new MongooseError("fieldName is empty");
         }
@@ -445,10 +445,10 @@ class MongooseModel {
             foreignField = decamelize(ref, 'model', false) + '_id';
         }
         let justOne = false;
-        return this.baseHas(fieldName, { ref, localField, foreignField, justOne, match, select, options });
+        return this.baseHas(fieldName, { ref, localField, foreignField, justOne, match, select, options, count });
     }
 
-    morphedByMany(fieldName = "", through = "", model = "", { modelField = "", localField, foreignField, populateField, match, select, options } = {}) {
+    morphedByMany(fieldName = "", through = "", model = "", { modelField = "", localField, foreignField, populateField, match, select, options, count } = {}) {
         if (model.length > 0) {
             let object = {};
             if (modelField.length <= 0) {
@@ -462,10 +462,10 @@ class MongooseModel {
         if (!populateField && (typeof (through) == "string")) {
             populateField = decamelize(through, 'Model', false);
         }
-        return this.hasManyThrough(fieldName, through, { localField, foreignField, populateField, match, select, options });
+        return this.hasManyThrough(fieldName, through, { localField, foreignField, populateField, match, select, options, count });
     }
 
-    morphToMany(fieldName = "", through = "", { model = "", modelField, localField, foreignField, populateField, match, select, options } = {}) {
+    morphToMany(fieldName = "", through = "", { model = "", modelField, localField, foreignField, populateField, match, select, options, count } = {}) {
         if (fieldName.length <= 0) {
             throw new MongooseError("fieldName is empty");
         }
@@ -491,7 +491,7 @@ class MongooseModel {
         if (!foreignField) {
             foreignField = decamelize(through, 'model', false) + '_id';
         }
-        return this.hasManyThrough(fieldName, through, { localField, foreignField, populateField, match, select, options });
+        return this.hasManyThrough(fieldName, through, { localField, foreignField, populateField, match, select, options, count });
     }
 
     timestamps(index = true) {
