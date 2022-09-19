@@ -127,7 +127,7 @@ module.exports = function (inmongoose) {
                             }
                         } catch (error) { paths = {}; }
                     }
-                    else{
+                    else {
                         options.is_pql_file = true;
                     }
                 }
@@ -211,7 +211,8 @@ module.exports = function (inmongoose) {
         for (let i in paths) {
             if (!isObject(paths[i])) {
                 if (paths[i] === 1) {
-                    if (schema && schema.virtuals[i]) {
+                    const true_schema = schema.virtuals ? schema.virtuals : schema.schema.virtuals;
+                    if (schema && true_schema[i]) {
                         if (i == 'id') {
                             only_arr.push(i);
                         } else { paths[i] = {}; }
