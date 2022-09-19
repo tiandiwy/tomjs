@@ -168,7 +168,7 @@ module.exports = function (inmongoose) {
         }
         let model_name = RE.model ? RE.model : path_name;
         if (!schema) {
-            if (!inmongoose.modelSchemas[model_name]) {
+            if (!inmongoose.models[model_name]) {
                 let loadOK = true;
                 try {
                     if (model_name.startsWith(models_cfg.belongs_to_many._belongs_to_many_head)) {
@@ -189,17 +189,17 @@ module.exports = function (inmongoose) {
                     }
                     if (temp_ref) {
                         RE.model = temp_ref;
-                        if (!inmongoose.modelSchemas[temp_ref]) {
+                        if (!inmongoose.models[temp_ref]) {
                             let nModel = await LoadClass('model', temp_ref);
                             let nmodel = nModel.Model(conn);
                             schema = nModel.BuildSchema;
                         } else {
-                            schema = inmongoose.modelSchemas[temp_ref];
+                            schema = inmongoose.models[temp_ref];
                         }
                     }
                 }
             } else {
-                schema = inmongoose.modelSchemas[model_name];
+                schema = inmongoose.models[model_name];
             }
         }
 
@@ -224,14 +224,14 @@ module.exports = function (inmongoose) {
 
         if (super_schema && schema) {
             for (let idx in super_schema.virtuals) {
-                if (super_schema.virtuals[idx].options.ref == schema.methods.getModelClassName()) {
+                if (super_schema.virtuals[idx].options.ref == (schema.getModelClassName || schema.methods.getModelClassName)()) {
                     virtual_obj[super_schema.virtuals[idx].options.foreignField] = 1; //添加 因有引用需要保留的字段
                     have_virtual_obj = true;
                 }
             }
         }
 
-        let allBelongsToMany = schema ? schema.methods.getAllBelongsToMany() : {};
+        let allBelongsToMany = schema ? (((schema.getAllBelongsToMany || schema.methods?.getAllBelongsToMany) || schema.schema?.methods?.getAllBelongsToMany)()) : {};
         for (let i in paths) {
             if (isObject(paths[i])) {
                 let dqBelongsToMany = undefined;
