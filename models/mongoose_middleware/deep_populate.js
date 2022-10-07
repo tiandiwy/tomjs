@@ -704,9 +704,9 @@ module.exports = function (inmongoose) {
     }
 
     async function aggregateEndDeepPopulateOne($this, doc) {
-        let options = DefaultOptions($this._model.schema._defaultDeepPopulateOptions, $this._deepPopulatePaths.options);
-        let model = $this._model;
-        let obj = await model.findById(doc[options.aggregate_id]).pql($this._deepPopulatePaths.paths, $this._deepPopulatePaths.options);
+        const options = DefaultOptions($this._model.schema._defaultDeepPopulateOptions, $this._deepPopulatePaths.options);
+        const model = $this._model;
+        const obj = await model.findById(doc[options.aggregate_id]).pql($this._deepPopulatePaths.paths, $this._deepPopulatePaths.options);
         Object.assign(doc, obj.getValues());
     }
     async function aggregateEndDeepPopulate(values) {
@@ -719,7 +719,7 @@ module.exports = function (inmongoose) {
             if (isObject(values)) {
                 await aggregateEndDeepPopulateOne(this, values);
             } else if (isArray(values)) {
-                let len = values.length;
+                const len = values.length;
                 for (let i = 0; i < len; i++) {
                     await aggregateEndDeepPopulateOne(this, values[i]);
                 }
@@ -738,8 +738,8 @@ module.exports = function (inmongoose) {
         schema.methods.deepPopulate = async function (paths, options = {}) { //查询后再填充            
             DefaultOptions(schema._defaultDeepPopulateOptions, options);
             this._deepPopulatePaths = { paths, options };
-            let RE = await runDeepPopulate.call(this, null);
-            let values = await this.populate(_.values(RE.populate)).execPopulate();
+            const RE = await runDeepPopulate.call(this, null);
+            const values = await this.populate(_.values(RE.populate));
             endDeepPopulate.call(this, values);
             return values;
         };
