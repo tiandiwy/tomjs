@@ -146,11 +146,15 @@ class WS_URL_Router {
         return new_ctx;
     }
 
-    path(path_str, controller) {
+    path(path_str, controller, fnCheckParams = null) {
         let old_controller = controller;
         let controller_fn = () => { };
 
         let ws_route_fn = async (ctx, next) => {
+            if (isFunction(fnCheckParams)) {
+                const re = await fnCheckParams(ctx, next);
+                if (!re) { return; }
+            }
             let iSendID = 0;
             function getNewSendID() {
                 iSendID++;
