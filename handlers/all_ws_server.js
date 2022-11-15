@@ -54,6 +54,8 @@ class AllWSServers {
         ctx.websocket.leaveRoom = ctx.websocket.servers.leaveRoom.bind(ctx.websocket.servers, ctx);
         ctx.websocket.forceLeaveRoom = ctx.websocket.servers.leaveRoom.bind(ctx.websocket.servers);
         ctx.websocket.getRooms = ctx.websocket.servers.getRooms.bind(ctx.websocket.servers);
+        ctx.websocket.getRoomUsers = ctx.websocket.servers.getRoomUsers.bind(ctx.websocket.servers);
+        ctx.websocket.getRoomUsersCount = ctx.websocket.servers.getRoomUsersCount.bind(ctx.websocket.servers);
         if (data) { ctx.websocket.broadcastRoom = ctx.websocket.servers.broadcastRoom.bind(ctx.websocket.servers, ctx, data); }
 
         ctx.websocket.sendSocket = ctx.websocket.servers.sendSocketByCTX.bind(ctx.websocket.servers, ctx);
@@ -371,6 +373,21 @@ class AllWSServers {
 
     getRooms() {
         return this.rooms;
+    }
+
+    getRoomUsers(room_name) {
+        if(isObject(this.rooms[room_name]) && isObject(this.rooms[room_name].users)){
+            return this.rooms[room_name].users;
+        }
+        return null;
+    }
+
+    getRoomUsersCount(room_name){
+        const users = this.getRoomUsers(room_name);
+        if(isObject(users)){
+            return (Object.keys(users)).length;
+        }
+        return 0;
     }
 
     createRoom(ctx, room_name, join = true, isAdmin = false) {
