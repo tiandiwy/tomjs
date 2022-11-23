@@ -280,10 +280,10 @@ class WS_URL_Router {
                                 || (isArray(new_ctx.matched) && new_ctx.matched.length <= 0)
                             )) {
                                 new_ctx.status = 404;
-                                throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, data);
+                                throw new BaseApiError(BaseApiError.NOT_FOUND_ERROR, old_data);
 
                             }
-                            else if ((new_ctx.status === 0 || new_ctx.status == 200) && data.id && !data.id.startsWith(websocket_cfg.websocket_id_head)) {
+                            else if ((new_ctx.status === 0 || new_ctx.status == 200) && old_data.id && !old_data.id.startsWith(websocket_cfg.websocket_id_head)) {
                                 new_ctx.websocket.reply(new_ctx.body, old_data);
                             }
                         }
