@@ -243,7 +243,7 @@ class WS_URL_Router {
                 }
                 else {
                     let isRunNewNext = false;
-                    new_ctx.websocket.reply = function (send_data) {
+                    new_ctx.websocket.reply = function (send_data, data) {
                         let ws_data = undefined;
                         if (!isObject(send_data)) {
                             ws_data = { data: send_data };
@@ -272,6 +272,7 @@ class WS_URL_Router {
                         }
                     };
 
+                    let old_data = data;
                     let new_next = async () => {
                         if (!isRunNewNext) {
                             isRunNewNext = true;
@@ -283,7 +284,7 @@ class WS_URL_Router {
 
                             }
                             else if ((new_ctx.status === 0 || new_ctx.status == 200) && data.id && !data.id.startsWith(websocket_cfg.websocket_id_head)) {
-                                new_ctx.websocket.reply(new_ctx.body);
+                                new_ctx.websocket.reply(new_ctx.body, old_data);
                             }
                         }
                         return Promise.resolve();
