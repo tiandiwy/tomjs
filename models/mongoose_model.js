@@ -144,7 +144,7 @@ class MongooseModel {
                         let fieldname = undefined;
                         for (let i = 0; i < len; i++) {
                             fieldname = model_this.fillable[i];
-                            if (doc[fieldname]) {
+                            if (doc[fieldname] !== undefined) {
                                 data[fieldname] = doc[fieldname];
                             }
                         }
@@ -157,7 +157,7 @@ class MongooseModel {
                         let fieldname = undefined;
                         for (let i = 0; i < len; i++) {
                             fieldname = model_this.guarded[i];
-                            if (data[fieldname]) { delete data[fieldname]; }
+                            if (data[fieldname] !== undefined) { delete data[fieldname]; }
                         }
                     }
                 }
