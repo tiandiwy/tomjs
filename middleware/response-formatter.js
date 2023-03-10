@@ -16,7 +16,7 @@ let response_formatter = (ctx) => {
     if (ctx.status === 429) {
 
     }
-    else if (ctx.body) {
+    else if (ctx.body !== undefined) {
         ctx.body = {
             code: 0,
             message: 'success',
