@@ -3,11 +3,11 @@ const configs = require2('tomjs/configs')();
 const mongoose = require2('mongoose');
 
 let createAddConn = false;
-module.exports = async function(config) {
+module.exports = async function (config) {
     let url = 'mongodb://localhost:27017/test';
     let options = { useNewUrlParser: true };
     if (config === undefined) { config = configs.database.mongodb; }
-    if (typeof(config) == "object") {
+    if (typeof (config) == "object") {
         let host = config.host ? config.host : "localhost";
         let port = config.port ? config.port : "27017";
         let database = config.database ? config.database : "test";
@@ -22,12 +22,21 @@ module.exports = async function(config) {
                 sHead = username + '@';
             }
         }
-        if (typeof(config.options == 'object')) {
+
+        let setStrictQuery = false;
+        if (typeof (config.options) == 'object') {
             for (var key in config.options) {
                 if (config.options[key] !== undefined) {
-                    options[key] = config.options[key];
+                    if (key != 'strictQuery') { options[key] = config.options[key]; }
+                    else {
+                        mongoose.set('strictQuery', config.options[key]);
+                        setStrictQuery = true;
+                    }
                 }
             }
+        }
+        if (!setStrictQuery) {
+            mongoose.set('strictQuery', true);
         }
 
         url = config.url ? config.url : `mongodb://${sHead}${host}:${port}/${database}`;
