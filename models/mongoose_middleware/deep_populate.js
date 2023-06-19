@@ -610,7 +610,7 @@ module.exports = function (inmongoose) {
                     }
                 }
             }
-            if (Paths.$must === false && Paths.$must === 0 && value !== null && value !== undefined && (isArray(value) && value.length > 0)) {
+            if ((Paths.$must === false || Paths.$must === 0) && value !== null && value !== undefined && (isArray(value) && value.length > 0)) {
                 return Symbol.for('$no_must');
             }
             if (Paths.$must === true && (value === null || (isArray(value) && value.length < 1))) {
