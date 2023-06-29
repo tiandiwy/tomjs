@@ -317,6 +317,15 @@ exports.filterCTXQuery = function (ctx, request = false) {
     let reObj = {};
     if (isObject(request ? ctx.request.body : ctx.query)) {
         reObj = JSON.parse(JSON.stringify(request ? ctx.request.body : ctx.query));
+        for (const key in reObj) {
+            let element = reObj[key];
+            if (isString(element)) {
+                element = element.trim();
+                if (element[0] == '{' && element[element.length - 1] == '}') {
+                    reObj[key] = JSON.parse(element);
+                }
+            }
+        }
         if (reObj[models_cfg.pql.ctx_body_query_field] !== undefined) {
             delete reObj[models_cfg.pql.ctx_body_query_field];
         }
