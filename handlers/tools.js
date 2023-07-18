@@ -321,7 +321,8 @@ exports.filterCTXQuery = function (ctx, request = false) {
             let element = reObj[key];
             if (isString(element)) {
                 element = element.trim();
-                if (element[0] == '{' && element[element.length - 1] == '}') {
+                if ((element[0] == '{' && element[element.length - 1] == '}') ||
+                    (element[0] == '[' && element[element.length - 1] == ']')) {
                     reObj[key] = JSON.parse(element);
                 }
             }
