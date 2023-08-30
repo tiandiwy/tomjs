@@ -211,7 +211,7 @@ module.exports = function (inmongoose) {
         for (let i in paths) {
             if (!isObject(paths[i])) {
                 if (paths[i] === 1) {
-                    const true_schema = schema.virtuals ? schema.virtuals : schema.schema.virtuals;
+                    const true_schema = schema.virtuals ? schema.methods.getRelationshipsVirtuals() : schema.schema.methods.getRelationshipsVirtuals();
                     if (schema && true_schema[i]) {
                         if (i == 'id') {
                             only_arr.push(i);

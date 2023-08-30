@@ -84,6 +84,9 @@ class MongooseModel {
             this.BuildSchema.methods.getModelClassName = () => {
                 return this.getModelClassName();
             };
+            this.BuildSchema.methods.getRelationshipsVirtuals = () => {
+                return this.relationshipsVirtuals;
+            };
             this.BuildSchema.methods.PopulateFields = () => {
                 let populateShowFields = undefined;
                 if (isArray(this.populateShowFields)) {
