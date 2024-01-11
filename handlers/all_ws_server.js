@@ -105,11 +105,12 @@ class AllWSServers {
         }
     };
 
-    deleteSocket(ctx) {
+    async deleteSocket(ctx) {
         let socket = ctx.websocket;
         let id = socket.getID();
         let user_id = ctx.auth.ID;
         if (all_sockets[id]) {
+            await emitter.emitAsync('delete_socket_before', { ctx, socket_id: id, user_id });
             if (user_id) {
                 this.deleteUser(ctx);
             }
@@ -262,12 +263,13 @@ class AllWSServers {
         }
     }
 
-    deleteUser(ctx) {
+    async deleteUser(ctx) {
         let user_id = ctx.auth.ID;
         let socket = ctx.websocket;
         if (all_auth_users[user_id]) {
             let arr = arrDelete(all_auth_users[user_id], socket);
             if (arr.length <= 0) {
+                await emitter.emitAsync('delete_user_before', { ctx, user_id, count: arr.length });
                 if (isFunction(websocket_cfg.on_delete_user_socket_fn)) {
                     websocket_cfg.on_delete_user_socket_fn(ctx, socket, user_id, all_auth_users);
                 }
@@ -401,28 +403,29 @@ class AllWSServers {
         return this.rooms[room_name];
     };
 
-    deleteRoom(ctx, room_name, force = false) {
+    async deleteRoom(ctx, room_name, force = false) {
         if (!this.rooms[room_name]) {
-            let websocket = undefined;
-            if (ctx) {
-                if (ctx.websocket) {
-                    websocket = ctx.websocket;
-                }
-            }
+            // let websocket = undefined;
+            // if (ctx) {
+            //     if (ctx.websocket) {
+            //         websocket = ctx.websocket;
+            //     }
+            // }
             if (force || (!ctx) || (this.rooms[room_name].creator === ctx.auth.id())) {
+                await emitter.emitAsync('delete_room_before', { ctx, room_name, force, auto: false });
                 const users = this.rooms[room_name].users;
                 for (const user_id in users) {
                     this.leaveRoom(users[user_id], room_name);
                 }
                 delete this.rooms[room_name];
-                emitter.emit('delete_room', { ctx, room_name, auto: false });
+                emitter.emit('delete_room', { ctx, room_name, force, auto: false });
                 return true;
             }
         }
         return false;
     }
 
-    changeRoomAdmin(ctx, room_name, new_ctx, force = false) {
+    async changeRoomAdmin(ctx, room_name, new_ctx, force = false) {
         if (!this.rooms[room_name]) {
             let socket = undefined;
             if (ctx) {
@@ -432,12 +435,13 @@ class AllWSServers {
             }
             if (force || (!ctx) || (this.rooms[room_name].creator === ctx.auth.id())) {
                 if (new_ctx && new_ctx.auth && isFunction(new_ctx.auth.id)) {
+                    await emitter.emitAsync('change_room_admin_before', { ctx, room_name, new_ctx, force });
                     const new_user_id = new_ctx.auth.id();
                     if (!this.rooms[room_name].users[new_user_id]) {
                         this.rooms[room_name].users[new_user_id] = new_ctx;
                     }
                     this.rooms[room_name].creator = new_user_id;
-                    emitter.emit('change_room_admin', { ctx, room_name, new_ctx });
+                    emitter.emit('change_room_admin', { ctx, room_name, new_ctx, force });
                     return true;
                 }
             }
@@ -474,7 +478,7 @@ class AllWSServers {
         return false;
     }
 
-    leaveRoom(ctx, room_name, del_socket_room = true) {
+    async leaveRoom(ctx, room_name, del_socket_room = true) {
         let RE = false;
         let socket_id = undefined;
         let socket = undefined;
@@ -486,6 +490,7 @@ class AllWSServers {
         }
         if (this.rooms[room_name]) {
             if (this.rooms[room_name].users[ctx.auth.id()]) {
+                await emitter.emitAsync('leave_room_before', { ctx, room_name });
                 delete this.rooms[room_name].users[ctx.auth.id()];
                 if (del_socket_room) {
                     if (all_sockets[socket_id]) {
@@ -497,6 +502,7 @@ class AllWSServers {
             emitter.emit('leave_room', { ctx, room_name });
             if (websocket_cfg.auto_delete_empty_room) {
                 if (this.rooms[room_name].users.length <= 0) {
+                    await emitter.emitAsync('delete_room_before', { ctx, room_name, auto: true });
                     delete this.rooms[room_name];
                     emitter.emit('delete_room', { ctx, room_name, auto: true });
                 }
