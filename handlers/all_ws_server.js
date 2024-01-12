@@ -110,7 +110,7 @@ class AllWSServers {
         let id = socket.getID();
         let user_id = ctx.auth.ID;
         if (all_sockets[id]) {
-            await emitter.emitAsync('delete_socket_before', { ctx, socket_id: id, user_id });
+            await emitter.emitAsync('delete_socket_before_sync', { ctx, socket_id: id, user_id });
             if (user_id) {
                 await this.deleteUser(ctx);
             }
@@ -269,7 +269,7 @@ class AllWSServers {
         if (all_auth_users[user_id]) {
             let arr = arrDelete(all_auth_users[user_id], socket);
             if (arr.length <= 0) {
-                await emitter.emitAsync('delete_user_before', { ctx, user_id, count: arr.length });
+                await emitter.emitAsync('delete_user_before_sync', { ctx, user_id, count: arr.length });
                 if (isFunction(websocket_cfg.on_delete_user_socket_fn)) {
                     await websocket_cfg.on_delete_user_socket_fn(ctx, socket, user_id, all_auth_users);
                 }
@@ -412,7 +412,7 @@ class AllWSServers {
             //     }
             // }
             if (force || (!ctx) || (this.rooms[room_name].creator === ctx.auth.id())) {
-                await emitter.emitAsync('delete_room_before', { ctx, room_name, force, auto: false });
+                await emitter.emitAsync('delete_room_before_sync', { ctx, room_name, force, auto: false });
                 const users = this.rooms[room_name].users;
                 for (const user_id in users) {
                     await this.leaveRoom(users[user_id], room_name);
@@ -435,7 +435,7 @@ class AllWSServers {
             }
             if (force || (!ctx) || (this.rooms[room_name].creator === ctx.auth.id())) {
                 if (new_ctx && new_ctx.auth && isFunction(new_ctx.auth.id)) {
-                    await emitter.emitAsync('change_room_admin_before', { ctx, room_name, new_ctx, force });
+                    await emitter.emitAsync('change_room_admin_before_sync', { ctx, room_name, new_ctx, force });
                     const new_user_id = new_ctx.auth.id();
                     if (!this.rooms[room_name].users[new_user_id]) {
                         this.rooms[room_name].users[new_user_id] = new_ctx;
@@ -490,7 +490,7 @@ class AllWSServers {
         }
         if (this.rooms[room_name]) {
             if (this.rooms[room_name].users[ctx.auth.id()]) {
-                await emitter.emitAsync('leave_room_before', { ctx, room_name });
+                await emitter.emitAsync('leave_room_before_sync', { ctx, room_name });
                 delete this.rooms[room_name].users[ctx.auth.id()];
                 if (del_socket_room) {
                     if (all_sockets[socket_id]) {
@@ -502,7 +502,7 @@ class AllWSServers {
             emitter.emit('leave_room', { ctx, room_name });
             if (websocket_cfg.auto_delete_empty_room) {
                 if (this.rooms[room_name].users.length <= 0) {
-                    await emitter.emitAsync('delete_room_before', { ctx, room_name, auto: true });
+                    await emitter.emitAsync('delete_room_before_sync', { ctx, room_name, auto: true });
                     delete this.rooms[room_name];
                     emitter.emit('delete_room', { ctx, room_name, auto: true });
                 }
