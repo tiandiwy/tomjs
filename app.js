@@ -15,6 +15,8 @@ const KoaIP = require2('koa-ip');
 const session = require2("tomjs-koa-session2");
 const mount = require2('koa-mount');
 const unless = require('koa-unless');
+const conditional = require('koa-conditional-get');
+const etag = require('koa-etag');
 const getApp = require2("tomjs/handlers/getapp");
 const Store = require2("tomjs/session/cahce_store");
 const auth_user = require2('tomjs/middleware/auth_user');
@@ -49,6 +51,11 @@ async function startRun() {
 
     let app = await app_init(getApp(new Koa()));
     locale(app, configs.system.lang_cookie_key);
+
+    if(configs.system.web_conditional_get){
+        app.use(conditional());
+        app.use(etag());    
+    }
 
     if (SystemConfig.server_run_type_force_https) {
         app.use(enforceHttps({
