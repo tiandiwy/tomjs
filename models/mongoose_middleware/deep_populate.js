@@ -170,17 +170,7 @@ module.exports = function (inmongoose) {
         if (!schema) {
             if (!inmongoose.models[model_name]) {
                 let loadOK = true;
-                try {
-                    if (model_name.startsWith(models_cfg.belongs_to_many._belongs_to_many_head)) {
-                        let allBelongsToMany = super_schema.methods.getAllBelongsToMany();
-                        let i = _.findKey(allBelongsToMany, { belongs_to_many: model_name });
-                        model_name = i ? allBelongsToMany[i].ref : model_name;
-                    }
-                    let mModel = await LoadClass('model', model_name);
-                    let mmodel = mModel.Model(conn);
-                    schema = mModel.BuildSchema;
-                } catch (e) { loadOK = false; }
-                if (!loadOK && super_schema) {
+                if (super_schema) {
                     let temp_ref = undefined;
                     if (super_schema.obj[model_name]) {
                         temp_ref = getRef(super_schema.obj[model_name].ref);
@@ -194,9 +184,20 @@ module.exports = function (inmongoose) {
                             let nmodel = nModel.Model(conn);
                             schema = nModel.BuildSchema;
                         } else {
-                            schema = inmongoose.models[temp_ref];
+                            schema = inmongoose.models[temp_ref].schema;
                         }
                     }
+                } else {
+                    try {
+                        if (model_name.startsWith(models_cfg.belongs_to_many._belongs_to_many_head)) {
+                            let allBelongsToMany = super_schema.methods.getAllBelongsToMany();
+                            let i = _.findKey(allBelongsToMany, { belongs_to_many: model_name });
+                            model_name = i ? allBelongsToMany[i].ref : model_name;
+                        }
+                        let mModel = await LoadClass('model', model_name);
+                        let mmodel = mModel.Model(conn);
+                        schema = mModel.BuildSchema;
+                    } catch (e) { loadOK = false; }
                 }
             } else {
                 schema = inmongoose.models[model_name];
