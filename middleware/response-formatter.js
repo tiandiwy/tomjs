@@ -56,10 +56,10 @@ let url_filter = () => {
                 response_formatter(ctx);
             }
         } catch (error) {
+            let NeedThrow = true;
             if (isAPI) {
                 let isOK = false;//程序是否抛出 BaseApiError.OK 异常 这种异常是属于正常退出的异常，以无内容正常退出方式处理
                 //如果异常类型是API异常并且通过正则验证的url，将错误信息添加到响应体中返回。
-                let NeedThrow = true;
                 if ((error instanceof BaseApiError) /*&& reg.test(ctx.originalUrl)*/) {
                     if (error.code !== BaseApiError.OK) {
                         ctx.status = 200;
@@ -114,7 +114,13 @@ let url_filter = () => {
                 //继续抛，让外层中间件处理日志
                 if (NeedThrow) { throw error; } else { ctx.response.type = 'application/json'; }
             }
-            else { throw error; }
+            else {
+                if (error.code == BaseApiError.OK) {
+                    ctx.status = 200;
+                    NeedThrow = false;
+                }
+                if (NeedThrow) { throw error; }
+            }
         }
     }
 }
