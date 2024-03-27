@@ -115,7 +115,7 @@ let url_filter = () => {
                 if (NeedThrow) { throw error; } else { ctx.response.type = 'application/json'; }
             }
             else {
-                if (error.code == BaseApiError.OK) {
+                if ((error instanceof BaseApiError) && error.code == BaseApiError.OK) {
                     ctx.status = 200;
                     NeedThrow = false;
                 }
