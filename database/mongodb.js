@@ -5,7 +5,7 @@ const mongoose = require2('mongoose');
 let createAddConn = false;
 module.exports = async function (config) {
     let url = 'mongodb://localhost:27017/test';
-    let options = { useNewUrlParser: true };
+    let options = {};
     if (config === undefined) { config = configs.database.mongodb; }
     if (typeof (config) == "object") {
         let host = config.host ? config.host : "localhost";
