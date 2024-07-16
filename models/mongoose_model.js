@@ -564,16 +564,7 @@ class MongooseModel {
             }
         }
 
-        if (model_this.isSoftDeletes) {
-            model_obj.deleteOne = function () {
-                return model_obj.delete.apply(this, arguments);
-            }
-
-            model_obj.deleteMany = function () {
-                return model_obj.delete.apply(this, arguments);
-            }
-        }
-        else {
+        if (!model_this.isSoftDeletes) {
             model_obj.deleteById = function (id) {
                 return model_obj.deleteOne.call(this, { _id: id });
             }
