@@ -217,7 +217,7 @@ module.exports = function (schema, options) {
         });
     }
 
-    schema.methods.deleteOne = function (deleted_by, cb) {
+    schema.methods.delete = function (deleted_by, cb) {
         if (typeof deleted_by === 'function') {
           cb = deleted_by;
           deleted_by = null;
@@ -240,7 +240,7 @@ module.exports = function (schema, options) {
         return this.save(cb);
     };
 
-    schema.statics.deleteOne =  function (conditions, deleted_by, callback) {
+    schema.statics.delete =  function (conditions, deleted_by, callback) {
         if (typeof deleted_by === 'function') {
             callback = deleted_by;
             conditions = conditions;
@@ -280,7 +280,7 @@ module.exports = function (schema, options) {
             _id: id
         };
 
-        return this.deleteOne(conditions, deleted_by, callback);
+        return this.delete(conditions, deleted_by, callback);
     };
 
     schema.methods.restore = function (callback) {
