@@ -4,7 +4,7 @@ const SystemConfig = require2('tomjs/configs')().system;
 
 let access_control_allow = () => {
     return async (ctx, next) => {
-        if (typeof (ctx.request.header.host.split) != "function") {
+        if (ctx.request.header.host && typeof (ctx.request.header.host.split) != "function") {
             throw new BaseApiError(BaseApiError.AUTHORIZE_ERROR);
         }
         if (ctx.request.header.host.split(':')[0] === 'localhost' || ctx.request.header.host.split(':')[0] === '127.0.0.1' || process.env.NODE_ENV === 'development') {
