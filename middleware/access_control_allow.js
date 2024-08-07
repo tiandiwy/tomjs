@@ -7,10 +7,16 @@ let access_control_allow = () => {
         if (ctx.request.header.host && typeof (ctx.request.header.host.split) != "function") {
             throw new BaseApiError(BaseApiError.AUTHORIZE_ERROR);
         }
-        if (ctx.request.header.host.split(':')[0] === 'localhost' || ctx.request.header.host.split(':')[0] === '127.0.0.1' || process.env.NODE_ENV === 'development') {
-            ctx.set('Access-Control-Allow-Origin', '*')
-        } else {
-            ctx.set('Access-Control-Allow-Origin', SystemConfig.server_access_control_allow_origin ? SystemConfig.server_access_control_allow_origin : SystemConfig.server_host)
+        let set_end = false;
+        if (typeof (SystemConfig.fn_server_access_control_allow_origin) == "function") {
+            const allow_origin = await SystemConfig.fn_server_access_control_allow_origin(ctx);
+            if (allow_origin) {
+                ctx.set('Access-Control-Allow-Origin', allow_origin);
+                set_end = true;
+            }
+        }
+        if (!set_end && SystemConfig.server_access_control_allow_origin) {
+            ctx.set('Access-Control-Allow-Origin', SystemConfig.server_access_control_allow_origin);
         }
         ctx.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
         ctx.set('Access-Control-Allow-Methods', 'PUT, PATCH, POST, GET, DELETE, OPTIONS')
