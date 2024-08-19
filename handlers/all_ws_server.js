@@ -465,6 +465,11 @@ class AllWSServers {
         //     ctx.auth.room_user_name = user.name;
         // }
         if (!roomObj.users[user_id] || roomObj.users[user_id] != ctx) {
+            if(roomObj.users[user_id] && roomObj.users[user_id] != ctx){
+                //发现重复进入就剔除原来链接
+                await this.leaveRoom(roomObj.users[user_id], room_name, false);
+                roomObj.users[user_id].websocket.terminate();
+            }
             roomObj.users[user_id] = ctx;
 
             //和all_sockets做关联 方便用户下线了，自动检测并离开聊天室
