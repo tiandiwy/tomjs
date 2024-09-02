@@ -479,7 +479,7 @@ module.exports = function (inmongoose) {
             for (let idx in values) {
                 if (is_only) {
                     if ((!EndVal.select[idx] && !EndVal.select[models_cfg.belongs_to_many._belongs_to_many_head + idx]) ||
-                        (!EndVal.select_old[idx])) {
+                        (!EndVal.select_old[idx] && !EndVal.select[models_cfg.belongs_to_many._belongs_to_many_head + idx])) {
                         delete values[idx];
                         if (values[idx] !== undefined) {
                             if (values.prototype[idx] !== undefined) { delete values.prototype[idx]; }
