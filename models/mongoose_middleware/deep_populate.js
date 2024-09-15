@@ -279,7 +279,16 @@ module.exports = function (inmongoose) {
                         }
                         if (isObject(schema)) {
                             if (schema.virtuals[i]) {
-                                virtual_obj[schema.virtuals[i].options.localField] = 1;
+                                let localField = schema.virtuals[i].options.localField;
+                                const lastIndex = localField.lastIndexOf('.');
+                                let add_field = true;
+                                if (lastIndex > -1) {
+                                    const localField_parent = localField.substring(0, lastIndex);
+                                    if (paths[localField] || paths[localField_parent]) {
+                                        add_field = false;
+                                    }
+                                }
+                                if (add_field) { virtual_obj[localField] = 1; }
                                 have_virtual_obj = true;
                             }
                         }
@@ -479,7 +488,7 @@ module.exports = function (inmongoose) {
             for (let idx in values) {
                 if (is_only) {
                     if ((!EndVal.select[idx] && !EndVal.select[models_cfg.belongs_to_many._belongs_to_many_head + idx]) ||
-                        (!EndVal.select_old[idx] && !EndVal.select[models_cfg.belongs_to_many._belongs_to_many_head + idx])) {
+                        (!EndVal.select_old[idx])) {
                         delete values[idx];
                         if (values[idx] !== undefined) {
                             if (values.prototype[idx] !== undefined) { delete values.prototype[idx]; }
