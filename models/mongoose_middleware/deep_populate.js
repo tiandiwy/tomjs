@@ -354,8 +354,6 @@ module.exports = function (inmongoose) {
         }
 
         this.mongoose.Query.prototype.deepPopulate = function (paths, options = {}) {
-            paths = JSON.parse(JSON.stringify(paths));
-            options = JSON.parse(JSON.stringify(options));
             DefaultOptions(this.schema._defaultDeepPopulateOptions, options);
             this._deepPopulatePaths = { paths, options };
             return this;
@@ -747,9 +745,7 @@ module.exports = function (inmongoose) {
             .post('findOne', endDeepPopulate)
             .post('find', endDeepPopulate)
             .post('aggregate', aggregateEndDeepPopulate);
-        schema.methods.deepPopulate = async function (paths, options = {}) { //查询后再填充    
-            paths = JSON.parse(JSON.stringify(paths));
-            options = JSON.parse(JSON.stringify(options));
+        schema.methods.deepPopulate = async function (paths, options = {}) { //查询后再填充
             DefaultOptions(schema._defaultDeepPopulateOptions, options);
             this._deepPopulatePaths = { paths, options };
             const RE = await runDeepPopulate.call(this, null);
