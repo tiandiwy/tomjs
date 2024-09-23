@@ -53,6 +53,10 @@ async function startRun() {
     let app = await app_init(getApp(new Koa()));
     locale(app, configs.system.lang_cookie_key);
 
+    if(configs.compress && configs.compress.open){
+        app.use(compress(configs.compress));
+    }
+
     if(configs.system.web_conditional_get){
         app.use(conditional());
         app.use(etag());    
@@ -117,9 +121,6 @@ async function startRun() {
     else { app.use(koaBody); }
 
     // app.use(all_params);
-    if(configs.compress && configs.compress.open){
-        app.use(compress(configs.compress));
-    }
 
     const subdomain = new Subdomain();
     for (let idx in configs.subdomain.maps) {
