@@ -28,6 +28,7 @@ const ErrorRouter = require2('tomjs/router/error-router');
 const setupLang = require2('tomjs/middleware/setuplang');
 const { clone, isObject, isString } = require2('tomjs/handlers/base_tools');
 const proxy = require('koa-proxy');
+const compress = require('koa-compress');
 
 const app_init = require(path.join(app_dir, './init/web'));//提供用户第一时间初始化app使用
 
@@ -116,6 +117,9 @@ async function startRun() {
     else { app.use(koaBody); }
 
     // app.use(all_params);
+    if(configs.compress && configs.compress.open){
+        app.use(compress(configs.compress));
+    }
 
     const subdomain = new Subdomain();
     for (let idx in configs.subdomain.maps) {
