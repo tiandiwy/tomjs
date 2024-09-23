@@ -1,6 +1,6 @@
 {
   "name": "tomjs",
-  "version": "0.9.204",
+  "version": "0.9.205",
   "description": "tomjs framework",
   "main": "app.js",
   "scripts": {
@@ -52,7 +52,7 @@
     "lodash": "^4.17.19",
     "log4js": "^6.4.6",
     "loose-json": "^1.1.2",
-    "mongoose": "^7.8.1",
+    "mongoose": "^6.13.2",
     "mongoose-hidden": "^1.9.1",
     "mongoose-validator": "^2.1.0",
     "mysql2": "^1.7.0",
