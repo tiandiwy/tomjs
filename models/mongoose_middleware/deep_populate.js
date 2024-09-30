@@ -157,6 +157,9 @@ module.exports = function (inmongoose) {
                     }
                 }
             }
+            else if (isObject(paths)) {
+                paths = JSON.parse(JSON.stringify(paths));
+            }
             options.oldPaths = JSON.parse(JSON.stringify(paths));
         }
         if (options.is_guard === undefined) { options.is_guard = true; }
