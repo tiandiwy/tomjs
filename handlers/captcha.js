@@ -11,7 +11,7 @@ module.exports = async function(cache_name) {
     }
     let data = svgCaptcha.create(cfg.captcha.options);
 
-    data.key = randomize('Aa0',cfg.captcha.cache_key_length, { exclude: '0oOiIlL1' });
+    data.key = randomize('Aa0',cfg.captcha.cache_key_length);
     await captcha_cache.set(cache_name + ":" + data.key, data.text.toLowerCase());
     if (cfg.system.NODE_ENV.trim().toLowerCase() != 'development') { delete data.text; }
 
