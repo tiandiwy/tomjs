@@ -1,8 +1,9 @@
 const require2 = require('tomjs/handlers/require2');
 const BaseApiError = require2('tomjs/error/base_api_error');
-const system_cfg = require2('tomjs/configs')().system;
+const configs = require2('tomjs/configs')();
+const system_cfg = configs.system;
 const Events = require2('tomjs/handlers/events');
-const { isObject } = require2('tomjs/handlers/base_tools');
+const { isObject, isFunction } = require2('tomjs/handlers/base_tools');
 
 let emitter = Events.getEventEmitter('websocket');
 
@@ -12,13 +13,21 @@ module.exports = async function (ctx, next) {
         if (data === undefined) { data = {}; }
         if (!isObject(data)) {
             data = { data: data };
-        }        
+        }
         let new_data = {
             code: 0,
             message: 'OK',
             data: data
         }
-        arguments[0] = JSON.stringify(Object.assign({}, new_data, data));
+
+        let send_data = null;
+        if (isFunction(configs.websocket.serialize_method)) {
+            send_data = configs.websocket.serialize_method(Object.assign({}, new_data, data));
+        }
+        else {
+            send_data = JSON.stringify(Object.assign({}, new_data, data));
+        }
+        arguments[0] = send_data;
         return ctx.websocket.old_send.apply(ctx.websocket, arguments);
     };
 
@@ -97,7 +106,14 @@ module.exports = async function (ctx, next) {
         }
         if (isSend) {
             emitter.emit('error_send', { error: err_obj, ctx });
-            ctx.websocket.old_send(JSON.stringify(err_obj));
+            let send_data = null;
+            if (isFunction(configs.websocket.serialize_method)) {
+                send_data = configs.websocket.serialize_method(err_obj);
+            }
+            else {
+                send_data = JSON.stringify(err_obj);
+            }
+            ctx.websocket.old_send(send_data);
         }
     };
 

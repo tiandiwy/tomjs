@@ -9,26 +9,32 @@ const emitter = Events.getEventEmitter('websocket');
 
 module.exports = async (ctx, next) => {
     ctx.websocket.on('message', async (message) => {
+        if(isFunction(configs.websocket.deserialize)){
+            message = configs.websocket.deserialize(message)
+        }
+        else {
+            message = JSON.parse(message);
+        }
         try {
             if (isObject(configs.ratelimit.websocket_global)) {
                 await ratelimit('websocket_global').websocket(ctx);
             }
             if (isFunction(ctx.websocket.on_message)) {
-                await ctx.websocket.on_message(JSON.parse(message));
+                await ctx.websocket.on_message(message);
             }
             else {
                 let handle = setInterval(async () => {
                     //第一次只等1毫秒，而后再等就是20毫秒一次，最多100次
                     clearInterval(handle);
                     if (isFunction(ctx.websocket.on_message)) {
-                        await ctx.websocket.on_message(JSON.parse(message));
+                        await ctx.websocket.on_message(message);
                     }
                     else {
                         let mac_count = 100;
                         let handle20 = setInterval(async () => {
                             if (isFunction(ctx.websocket.on_message)) {
                                 clearInterval(handle20);
-                                await ctx.websocket.on_message(JSON.parse(message));
+                                await ctx.websocket.on_message(message);
                             }
                             else {
                                 mac_count--;
@@ -42,7 +48,7 @@ module.exports = async (ctx, next) => {
             }
         }
         catch (error) {
-            let data = JSON.parse(message);
+            let data = message;
             if (isString(data.method)) {
                 data.method = data.method.trim().toUpperCase();
             }
