@@ -9,8 +9,8 @@ const emitter = Events.getEventEmitter('websocket');
 
 module.exports = async (ctx, next) => {
     ctx.websocket.on('message', async (message) => {
-        if(isFunction(configs.websocket.deserialize)){
-            message = configs.websocket.deserialize(message)
+        if(isFunction(configs.websocket.deserialize_method)){
+            message = configs.websocket.deserialize_method(message)
         }
         else {
             message = JSON.parse(message);
